@@ -37,9 +37,9 @@ def team_info():
         "team": "cloud-team-XX",
         "members": [
             # TODO: Isi dengan data tim Anda
-            {"name": "Nama 1", "nim": "NIM1", "role": "Lead Backend"},
-            {"name": "Nama 2", "nim": "NIM2", "role": "Lead Frontend"},
-            {"name": "Nama 3", "nim": "NIM3", "role": "Lead DevOps"},
-            {"name": "Nama 4", "nim": "NIM4", "role": "Lead QA & Docs"},
+            {"name": "Dzaky Rasyiq Zuhair", "nim": "10231035", "role": "Lead Backend"},
+            {"name": "Dhiya Afifah", "nim": "10231031", "role": "Lead Frontend"},
+            {"name": "Ika Agustin Wulandari", "nim": "10231041", "role": "Lead DevOps"},
+            {"name": "Gabriel Karmen Sanggalangi", "nim": "10231039", "role": "Lead QA & Docs"},
         ]
     }
