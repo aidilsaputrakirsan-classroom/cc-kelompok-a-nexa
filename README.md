@@ -7,10 +7,10 @@ untuk siapa, masalah apa yang diselesaikan.
 
 | Nama | NIM | Peran |
 |------|-----|-------|
-| ...  | ... | Lead Backend |
-| ...  | ... | Lead Frontend |
-| ...  | ... | Lead DevOps |
-| ...  | ... | Lead QA & Docs |
+| Dzaky Rasyiq Zuhair  | 10231035 | Lead Backend |
+| Dhiya Afifah  | 10231031 | Lead Frontend |
+| Ika Agustin Wulandari  | 10231041 | Lead DevOps |
+| Gabriel Karmen Sanggalangi  | 10231039 | Lead QA & Docs |
 
 ## 🛠️ Tech Stack
 
