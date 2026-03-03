@@ -1,7 +1,8 @@
-# ☁️ Cloud App - [Nama Proyek Tim Anda]
+# ☁️ Cloud App - [STUDYFY]
 
-Deskripsi singkat aplikasi (1-2 paragraf): apa yang dilakukan, 
-untuk siapa, masalah apa yang diselesaikan.
+Studyfy-Belajar adalah platform Learning Management System (LMS) berbasis cloud yang dirancang untuk menciptakan pengalaman belajar digital yang simpel, terorganisir, dan menyenangkan dengan mengintegrasikan peran admin, pengajar, dan murid dalam satu sistem terpadu yang efisien. Melalui platform ini, murid dapat mengakses materi pembelajaran berbasis multimedia serta memantau progres belajar secara mandiri, sementara pengajar dibekali dashboard khusus untuk mengelola modul materi, menyusun penugasan, hingga melakukan penilaian secara langsung.
+
+Di sisi lain, admin berperan sebagai pengendali utama yang mengelola hak akses pengguna berbasis peran serta memantau statistik aktivitas dan performa sistem secara menyeluruh. Dengan dukungan arsitektur cloud, Studyfy-Belajar memungkinkan akses lintas perangkat, skalabilitas layanan, serta ketersediaan sistem yang optimal. Urgensi pengembangan Studyfy-Belajar terletak pada penyederhanaan akses pendidikan, peningkatan efektivitas pembelajaran, serta digitalisasi dokumentasi belajar yang fleksibel melalui teknologi yang modern, aman, dan user-friendly.
 
 ## 👥 Tim
 
