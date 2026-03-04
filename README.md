@@ -73,48 +73,8 @@ npm run dev
 cc-kelompok-a-nexa/
 │
 ├── backend/
-│   ├── .env
-│   ├── .env.example
-│   ├── main.py                  
-│   ├── database.py              
-│   ├── requirements.txt
-│
-│   ├── models/                  
-│   │   ├── user.py              
-│   │   ├── course.py            
-│   │   ├── module.py            
-│   │   ├── assignment.py        
-│   │   └── submission.py        
-│   │
-│   ├── schemas/                 
-│   │   ├── user_schema.py
-│   │   ├── course_schema.py
-│   │   ├── module_schema.py
-│   │   ├── assignment_schema.py
-│   │   └── auth_schema.py
-│   │
-│   ├── crud/                    
-│   │   ├── user_crud.py
-│   │   ├── course_crud.py
-│   │   ├── module_crud.py
-│   │   ├── assignment_crud.py
-│   │   └── analytics_crud.py
-│   │
-│   ├── routers/                 
-│   │   ├── auth.py
-│   │   ├── users.py
-│   │   ├── courses.py
-│   │   ├── modules.py
-│   │   ├── assignments.py
-│   │   └── analytics.py
-│   │
-│   ├── core/                    
-│   │   ├── security.py          
-│   │   ├── config.py
-│   │   └── dependencies.py
-│   │
-│   └── media/
-│       └── materials/           
+│   ├── main.py                               
+│   └── requirements.txt
 │
 ├── frontend/
 │   ├── public/
@@ -122,22 +82,7 @@ cc-kelompok-a-nexa/
 │   │
 │   ├── src/
 │   │   ├── assets/
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── auth/
-│   │   │   │   └── Login.jsx
-│   │   │   ├── admin/
-│   │   │   ├── teacher/
-│   │   │   └── student/
-│   │   │
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── Sidebar.jsx
-│   │   │   └── ProtectedRoute.jsx
-│   │   │
-│   │   ├── services/
-│   │   │   └── api.js
-│   │   │
+│   │   ├── App.css
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
@@ -146,20 +91,14 @@ cc-kelompok-a-nexa/
 │   ├── package.json
 │   └── vite.config.js
 │
-├── docs/
-│   ├── anggota/
-│   │   ├── gabriel.md
-│   │   └── wulan.md
-│   │
-│   ├── sistem/
-│   │   ├── deskripsi_sistem.md
-│   │   ├── usecase.md
-│   │   └── arsitektur.md
-│
 ├── .gitignore
 ├── .python-version
-├── README.md
-└── README.pdf
+└── README.md
 
 ```
 
+## Hasil Uji Coba Endpoint
+
+<img src="hasil_pengecekan/Screenshot 2026-02-28 192032.png">
+<img src="hasil_pengecekan/Screenshot 2026-02-28 192041.png">
+<img src="hasil_pengecekan/Screenshot 2026-02-28 192024.png">
