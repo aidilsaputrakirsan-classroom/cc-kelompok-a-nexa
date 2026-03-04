@@ -15,3 +15,6 @@ dist/
 .vscode/
 .idea/
 EOF
+
+# Env
+.env
