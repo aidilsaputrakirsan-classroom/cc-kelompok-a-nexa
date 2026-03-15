@@ -46,3 +46,12 @@ class ItemListResponse(BaseModel):
     """Schema untuk response list items dengan total count."""
     total: int
     items: list[ItemResponse]
+
+
+# === STATS RESPONSE ===
+class ItemStatsResponse(BaseModel):
+    """Ringkasan statistik semua item."""
+    total_items: int
+    total_quantity: int
+    total_value: float
+    average_price: float

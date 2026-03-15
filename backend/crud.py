@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from models import Item
 from schemas import ItemCreate, ItemUpdate
 
@@ -34,6 +34,23 @@ def get_items(db: Session, skip: int = 0, limit: int = 20, search: str = None):
     items = query.order_by(Item.created_at.desc()).offset(skip).limit(limit).all()
     
     return {"total": total, "items": items}
+
+
+def get_item_stats(db: Session):
+    """Ambil statistik agregat semua item."""
+    total_items, total_quantity, total_value, average_price = db.query(
+        func.count(Item.id),
+        func.coalesce(func.sum(Item.quantity), 0),
+        func.coalesce(func.sum(Item.price * Item.quantity), 0.0),
+        func.coalesce(func.avg(Item.price), 0.0),
+    ).one()
+
+    return {
+        "total_items": int(total_items or 0),
+        "total_quantity": int(total_quantity or 0),
+        "total_value": float(total_value or 0.0),
+        "average_price": float(average_price or 0.0),
+    }
 
 
 def get_item(db: Session, item_id: int) -> Item | None:
