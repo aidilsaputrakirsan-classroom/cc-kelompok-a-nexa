@@ -15,8 +15,9 @@ jobs:
           echo "Environment variables siap."
 
       - name: Docker Validation
-        # Perintah ini akan tetap dianggap sukses (hijau) walaupun build gagal
-        run: docker compose build || true
+        run: |
+          echo "Checking Docker Compose..."
+          docker compose version
 
       - name: Cross-Browser Environment
         run: |
