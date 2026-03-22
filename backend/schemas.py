@@ -1,6 +1,10 @@
-from pydantic import BaseModel, Field
+import re
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
+
+
+EMAIL_REGEX = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
 
 
 # === BASE SCHEMA ===
@@ -59,9 +63,41 @@ class ItemStatsResponse(BaseModel):
 
 class UserCreate(BaseModel):
     """Schema untuk registrasi user baru."""
-    email: str = Field(..., examples=["user@student.itk.ac.id"])
+    email: str = Field(
+        ...,
+        pattern=EMAIL_REGEX,
+        examples=["user@student.itk.ac.id"],
+        description="Format email harus valid, contoh: user@domain.com",
+    )
     name: str = Field(..., min_length=2, max_length=100, examples=["Aidil Saputra"])
-    password: str = Field(..., min_length=8, examples=["password123"])
+    password: str = Field(
+        ...,
+        min_length=8,
+        examples=["P@ssword123"],
+        description="Password minimal 8 karakter, wajib huruf besar, huruf kecil, angka, dan simbol.",
+    )
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_format(cls, value: str) -> str:
+        if not re.fullmatch(EMAIL_REGEX, value):
+            raise ValueError("Format email tidak valid. Gunakan format seperti nama@domain.com")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, value: str) -> str:
+        if len(value) < 8:
+            raise ValueError("Password minimal 8 karakter.")
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password harus mengandung minimal 1 huruf besar (A-Z).")
+        if not re.search(r"[a-z]", value):
+            raise ValueError("Password harus mengandung minimal 1 huruf kecil (a-z).")
+        if not re.search(r"\d", value):
+            raise ValueError("Password harus mengandung minimal 1 angka (0-9).")
+        if not re.search(r"[^\w\s]", value):
+            raise ValueError("Password harus mengandung minimal 1 simbol, misalnya !@#$%.")
+        return value
 
 
 class UserResponse(BaseModel):
@@ -78,8 +114,20 @@ class UserResponse(BaseModel):
 
 class LoginRequest(BaseModel):
     """Schema untuk login request."""
-    email: str = Field(..., examples=["user@student.itk.ac.id"])
+    email: str = Field(
+        ...,
+        pattern=EMAIL_REGEX,
+        examples=["user@student.itk.ac.id"],
+        description="Format email harus valid, contoh: user@domain.com",
+    )
     password: str = Field(..., examples=["password123"])
+
+    @field_validator("email")
+    @classmethod
+    def validate_login_email_format(cls, value: str) -> str:
+        if not re.fullmatch(EMAIL_REGEX, value):
+            raise ValueError("Format email tidak valid. Gunakan format seperti nama@domain.com")
+        return value
 
 
 class TokenResponse(BaseModel):
