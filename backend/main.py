@@ -16,7 +16,7 @@ import crud
 
 load_dotenv()
 
-# Buat semua tabel
+# Buat semua tabel saat startup
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -25,8 +25,9 @@ app = FastAPI(
     version="0.4.0",
 )
 
-# ==================== CORS (FIXED) ====================
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+# ==================== CORS (CONFIGURED FOR DEVOPS) ====================
+# Mengambil allowed origins dari .env, default ke localhost frontend (Vite)
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost")
 origins_list = [origin.strip() for origin in allowed_origins.split(",")]
 
 app.add_middleware(
@@ -49,13 +50,6 @@ def health_check():
 
 @app.post("/auth/register", response_model=UserResponse, status_code=201)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """
-    Registrasi user baru.
-    
-    - **email**: Email unik (akan digunakan untuk login)
-    - **name**: Nama lengkap
-    - **password**: Minimal 8 karakter
-    """
     user = crud.create_user(db=db, user_data=user_data)
     if not user:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar")
@@ -64,12 +58,6 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/auth/login", response_model=TokenResponse)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
-    """
-    Login dan dapatkan JWT token.
-    
-    Token berlaku selama 60 menit (default).
-    Gunakan token di header: `Authorization: Bearer <token>`
-    """
     user = crud.authenticate_user(db=db, email=login_data.email, password=login_data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Email atau password salah")
@@ -84,7 +72,6 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 @app.get("/auth/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
-    """Ambil profil user yang sedang login."""
     return current_user
 
 
@@ -96,7 +83,6 @@ def create_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Buat item baru. **Membutuhkan autentikasi.**"""
     return crud.create_item(db=db, item_data=item)
 
 
@@ -108,7 +94,6 @@ def list_items(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Ambil daftar items. **Membutuhkan autentikasi.**"""
     return crud.get_items(db=db, skip=skip, limit=limit, search=search)
 
 
@@ -117,7 +102,6 @@ def get_items_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Ambil ringkasan statistik item. **Membutuhkan autentikasi.**"""
     return crud.get_item_stats(db=db)
 
 
@@ -127,7 +111,6 @@ def get_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Ambil satu item. **Membutuhkan autentikasi.**"""
     item = crud.get_item(db=db, item_id=item_id)
     if not item:
         raise HTTPException(status_code=404, detail=f"Item {item_id} tidak ditemukan")
@@ -141,7 +124,6 @@ def update_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update item. **Membutuhkan autentikasi.**"""
     updated = crud.update_item(db=db, item_id=item_id, item_data=item)
     if not updated:
         raise HTTPException(status_code=404, detail=f"Item {item_id} tidak ditemukan")
@@ -154,7 +136,6 @@ def delete_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Hapus item. **Membutuhkan autentikasi.**"""
     success = crud.delete_item(db=db, item_id=item_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Item {item_id} tidak ditemukan")
@@ -165,11 +146,9 @@ def delete_item(
 
 @app.get("/team")
 def team_info():
-    """Informasi tim."""
     return {
-        "team": "cloud-team-XX",
+        "team": "cloud-kelompok-a-nexa",
         "members": [
-            # TODO: Isi dengan data tim Anda
             {"name": "Dzaky Rasyiq Zuhair", "nim": "10231035", "role": "Lead Backend"},
             {"name": "Dhiya Afifah", "nim": "10231031", "role": "Lead Frontend"},
             {"name": "Ika Agustin Wulandari", "nim": "10231041", "role": "Lead DevOps"},
