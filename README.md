@@ -51,15 +51,34 @@ cd frontend
 npm install
 npm run dev
 ```
+## 🔐 Keamanan & Autentikasi
+> API ini dilindungi menggunakan standar **JWT (JSON Web Token)**. Untuk mengakses *endpoint* yang terproteksi (seperti mengelola data *Items*), pengguna harus melakukan autentikasi terlebih dahulu.
 
+Berikut adalah alur autentikasi pada sistem ini:
+
+**1. Registrasi Akun (`POST /auth/register`)** <br>
+Lakukan pendaftaran akun baru. Sistem menerapkan validasi keamanan yang ketat, pastikan password Anda memenuhi kriteria berikut:
+* ✅ Minimal **8 karakter**
+* ✅ Memiliki minimal **1 huruf besar** (A-Z) dan **1 huruf kecil** (a-z)
+* ✅ Memiliki minimal **1 angka** (0-9)
+* ✅ Memiliki minimal **1 simbol** (contoh: `!@#$%`)
+
+**2. Login (`POST /auth/login`)** <br>
+Gunakan kredensial yang telah didaftarkan untuk melakukan login. Jika berhasil, sistem akan merespons dengan memberikan `access_token`.
+
+**3. Penggunaan Token (Otorisasi)** <br> 
+Sertakan `access_token` tersebut di setiap *request* API selanjutnya. Masukkan ke dalam **HTTP Header** Anda dengan format berikut:
+```http
+Authorization: Bearer <access_token>
+```
 ## 📅 Roadmap
 
 | Minggu | Target | Status |
 |--------|--------|--------|
 | 1 | Setup & Hello World | ✅ |
-| 2 | REST API + Database | ⬜ |
-| 3 | React Frontend | ⬜ |
-| 4 | Full-Stack Integration | ⬜ |
+| 2 | REST API + Database | ✅ |
+| 3 | React Frontend | ✅ |
+| 4 | Full-Stack Integration | ✅ |
 | 5-7 | Docker & Compose | ⬜ |
 | 8 | UTS Demo | ⬜ |
 | 9-11 | CI/CD Pipeline | ⬜ |
@@ -71,32 +90,35 @@ npm run dev
 ## 📁 Project Structure
 ```
 cc-kelompok-a-nexa/
-│
 ├── backend/
-│   ├── main.py                               
-│   └── requirements.txt
-│
+│   ├── main.py              
+│   ├── auth.py              
+│   ├── database.py
+│   ├── models.py            
+│   ├── schemas.py           
+│   ├── crud.py              
+│   ├── requirements.txt     
+│   ├── .env                 
+│   └── .env.example         
 ├── frontend/
-│   ├── public/
-│   │   └── vite.svg
-│   │
 │   ├── src/
-│   │   ├── assets/
-│   │   ├── App.css
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   │
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-│
+│   │   ├── App.jsx              
+│   │   ├── components/
+│   │   │   ├── Header.jsx       
+│   │   │   ├── LoginPage.jsx    
+│   │   │   ├── SearchBar.jsx
+│   │   │   ├── ItemForm.jsx
+│   │   │   ├── ItemList.jsx
+│   │   │   └── ItemCard.jsx
+│   │   └── services/
+│   │       └── api.js           
+│   ├── .env
+│   └── .env.example
 ├── .gitignore
-├── .python-version
 └── README.md
 
 ```
-## Dokumentasi Endopoit
+## Dokumentasi Endpoint
 
 ### Health Check
 
@@ -109,6 +131,74 @@ Response Example (200 OK):
 {
   "status": "healthy",
   "version": "0.2.0"
+}
+```
+
+### Register
+
+Method  : POST  <br>
+URL : /auth/register <br>
+Request Body:  
+```JSON
+{
+  "email": "user@student.itk.ac.id",
+  "name": "User testing",
+  "password": "P@ssword123"
+}
+```
+Response Example (201 OK):
+
+```JSON
+{
+  "id": 0,
+  "email": "string",
+  "name": "string",
+  "is_active": true,
+  "created_at": "2026-03-23T12:36:30.754Z"
+}
+```
+
+### Login
+
+Method  : POST  <br>
+URL : /auth/login <br>
+Request Body:  
+```JSON
+{
+  "email": "user@student.itk.ac.id",
+  "password": "password123"
+}
+```
+Response Example (200 OK):
+
+```JSON
+{
+  "access_token": "string",
+  "token_type": "bearer",
+  "user": {
+    "id": 0,
+    "email": "string",
+    "name": "string",
+    "is_active": true,
+    "created_at": "2026-03-23T12:38:03.624Z"
+  }
+}
+```
+
+### Get Me
+
+Method  : GET  <br>
+URL : /auth/me <br>
+Request Body: None <br>
+Response Example (200 OK):
+
+```JSON
+{
+  "id": 0,
+  "email": "string",
+  "name": "string",
+  "is_active": true,
+  "created_at": "2026-03-23T12:38:38.627Z"
 }
 ```
 
@@ -168,7 +258,23 @@ Response Example (200 OK):
 }
 ```
 
-### Get Single Item
+### Get Item Stats
+
+Method  : GET  <br>
+URL : /items/stats <br>
+Request Body: none <br>
+Response Example (200 OK):
+
+```JSON
+{
+  "total_items": 0,
+  "total_quantity": 0,
+  "total_value": 0,
+  "average_price": 0
+}
+```
+
+### Get Item
 
 Method  : GET  <br>
 URL : /items/{item_id} <br>
