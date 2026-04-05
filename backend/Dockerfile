@@ -1,6 +1,25 @@
-FROM python:3.9-slim
+# 1. Gunakan base image Python yang ringan
+FROM python:3.12-slim
+
+# 2. Set working directory di dalam container
 WORKDIR /app
+
+# 3. Copy file requirements terlebih dahulu (untuk efisiensi cache)
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+
+# 4. Install dependencies backend
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 5. Copy seluruh sisa kode aplikasi ke dalam container
 COPY . .
-CMD ["python", "app.py"]
+
+# 6. === OPTIMASI TUGAS 5: Tambahkan non-root user ===
+RUN useradd -m appuser
+USER appuser
+# ====================================================
+
+# 7. Buka port 8000 untuk FastAPI
+EXPOSE 8000
+
+# 8. Command untuk menjalankan server saat container menyala
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
