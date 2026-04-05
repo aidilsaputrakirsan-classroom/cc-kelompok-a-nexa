@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 5. Copy seluruh sisa kode aplikasi ke dalam container
 COPY . .
 
-# 6. === OPTIMASI TUGAS 5: Tambahkan non-root user ===
+# 6. == OPTIMASI TUGAS 5: Tambahkan non-root user ==
 RUN useradd -m appuser
 USER appuser
 # ====================================================
