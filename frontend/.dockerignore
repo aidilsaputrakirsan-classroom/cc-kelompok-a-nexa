@@ -7,7 +7,3 @@ dist/
 .gitignore
 .vscode/
 .idea/
-Dockerfile
-.dockerignore
-*.log
-.DS_Store
