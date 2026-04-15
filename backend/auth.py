@@ -80,7 +80,7 @@ def get_current_user(
             detail="Token tidak valid",
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.id == int(user_id)).first()
 
     if user is None:
         raise HTTPException(

@@ -17,7 +17,7 @@ export function clearToken() {
 }
 
 function authHeaders() {
-  const headers = {}
+  const headers = {"Content-Type": "application/json"}
   if (authToken) {
     headers["Authorization"] = `Bearer ${authToken}`
   }

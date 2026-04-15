@@ -33,7 +33,7 @@ function LoginPage({ onLogin, onRegister }) {
         }
         await onRegister(formData)
       } else {
-        await onLogin(formData.email, formData.password)
+        await onLogin({ email: formData.email, password: formData.password })
       }
     } catch (err) {
       setError(err.message)

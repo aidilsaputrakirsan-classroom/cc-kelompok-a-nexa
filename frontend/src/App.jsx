@@ -52,14 +52,14 @@ function App() {
   // ==================== AUTH HANDLERS ====================
 
   const handleLogin = async (data) => {
-  const res = await login(data.email, data.password)
+  const res = await login(data)
   setUser(res.user)
   setIsAuthenticated(true)
 }
   const handleRegister = async (userData) => {
     // Register lalu otomatis login
     await register(userData)
-    await handleLogin(userData.email, userData.password)
+    await handleLogin({ email: formData.email, password: formData.password })
   }
 
   const handleLogout = () => {
