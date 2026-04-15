@@ -27,7 +27,9 @@ Di sisi lain, admin berperan sebagai pengendali utama yang mengelola hak akses p
 ## 🏗️ Architecture
 
 ```
-[React Frontend] <--HTTP--> [FastAPI Backend] <--SQL--> [PostgreSQL]
+[React Frontend (Nginx)] <--REST API (HTTP/JWT)--> [FastAPI Backend] <--SQLAlchemy ORM--> [PostgreSQL]
+                                                                                               |
+                                                                                         [Docker Volume]
 ```
 
 
