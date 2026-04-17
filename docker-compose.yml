@@ -34,9 +34,7 @@ services:
 
   # ==================== BACKEND ====================
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: dzaky975/cc-kelompok-a-nexa-backend:1.0
     container_name: cloudapp-backend
     restart: unless-stopped
     env_file:
@@ -57,11 +55,7 @@ services:
 
   # ==================== FRONTEND ====================
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: DockerFile
-      args:
-        VITE_API_URL: http://localhost:8000
+    build: jakdev/cc-kelompok-a-nexa-frontend:1.0
     container_name: cloudapp-frontend
     restart: unless-stopped
     ports:
