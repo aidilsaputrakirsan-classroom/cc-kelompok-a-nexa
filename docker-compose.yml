@@ -34,7 +34,7 @@ services:
 
   # ==================== BACKEND ====================
   backend:
-    build: dzaky975/cc-kelompok-a-nexa-backend:1.0
+    image: dzaky975/cc-kelompok-a-nexa-backend:1.0
     container_name: cloudapp-backend
     restart: unless-stopped
     env_file:
@@ -55,7 +55,7 @@ services:
 
   # ==================== FRONTEND ====================
   frontend:
-    build: dzaky975/cc-kelompok-a-nexa-frontend:1.0
+    image: dzaky975/cc-kelompok-a-nexa-frontend:1.0
     container_name: cloudapp-frontend
     restart: unless-stopped
     ports:
