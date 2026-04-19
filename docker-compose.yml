@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-      POSTGRES_DB: cloudapp
+      POSTGRES_DB: studyfy
     ports:
       - "5433:5432"
     volumes:
@@ -26,7 +26,7 @@ services:
     networks:
       - cloudnet
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cloudapp"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d studyfy"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,9 +34,7 @@ services:
 
   # ==================== BACKEND ====================
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: dzaky975/cc-kelompok-a-nexa-backend:1.0
     container_name: cloudapp-backend
     restart: unless-stopped
     env_file:
@@ -57,11 +55,7 @@ services:
 
   # ==================== FRONTEND ====================
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: http://localhost:8000
+    image: dzaky975/cc-kelompok-a-nexa-frontend:1.0
     container_name: cloudapp-frontend
     restart: unless-stopped
     ports:
