@@ -89,6 +89,8 @@ class Class(Base):
     semester = Column(Integer, nullable=False)
     academic_year = Column(String(10), nullable=False)  # e.g., "2024/2025"
     max_students = Column(Integer, nullable=True)
+    is_archived = Column(Boolean, default=False)  # Soft delete untuk arsip
+    archived_at = Column(DateTime(timezone=True), nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

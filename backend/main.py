@@ -179,16 +179,18 @@ def list_classes(
     limit: int = Query(20, ge=1, le=100),
     instructor_id: int | None = Query(None),
     semester: int | None = Query(None),
+    include_archived: bool = Query(False, description="Include archived classes"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List semua classes dengan filter."""
+    """List semua classes dengan filter (default exclude archived)."""
     result = crud.get_classes(
         db=db,
         skip=skip,
         limit=limit,
         instructor_id=instructor_id,
         semester=semester,
+        include_archived=include_archived,
     )
     return result
 
@@ -299,6 +301,25 @@ def get_class_students(
     students = crud.get_class_students(db=db, class_id=class_id)
     return students
 
+
+# ==================== CLASS ARCHIVE ====================
+
+@app.patch("/classes/{class_id}/archive", response_model=ClassResponse)
+def archive_class(
+    class_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Archive class (soft delete). Hanya admin yang bisa."""
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    if db_class.is_archived:
+        raise HTTPException(status_code=400, detail="Class sudah diarsip")
+    
+    archived_class = crud.archive_class(db=db, class_id=class_id)
+    return archived_class
 
 
 

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
+from datetime import datetime
 from models import Item, User, Class, user_class_association, UserRole
 from schemas import ItemCreate, ItemUpdate, UserCreate, UserProfileUpdate
 from auth import hash_password, verify_password, create_password_reset_token_record, verify_password_reset_token, clear_password_reset_token
@@ -194,9 +195,14 @@ def get_classes(
     limit: int = 20,
     instructor_id: int | None = None,
     semester: int | None = None,
+    include_archived: bool = False,
 ) -> dict:
-    """Ambil daftar classes dengan filter."""
+    """Ambil daftar classes dengan filter (default exclude archived classes)."""
     query = db.query(Class)
+    
+    # Default: exclude archived classes
+    if not include_archived:
+        query = query.filter(Class.is_archived == False)
     
     if instructor_id:
         query = query.filter(Class.instructor_id == instructor_id)
@@ -296,3 +302,36 @@ def get_class_student_count(db: Session, class_id: int) -> int:
         return 0
     
     return len(db_class.users)
+
+
+# ==================== ARCHIVE CLASS ====================
+
+def archive_class(db: Session, class_id: int) -> Class:
+    """Archive class (soft delete)."""
+    db_class = db.query(Class).filter(Class.id == class_id).first()
+    if not db_class:
+        return None
+    
+    db_class.is_archived = True
+    db_class.archived_at = datetime.now()
+    db.commit()
+    db.refresh(db_class)
+    return db_class
+
+
+def get_classes_with_archive(db: Session, skip: int = 0, limit: int = 20, include_archived: bool = False):
+    """
+    Ambil list class dengan opsi untuk include archived classes.
+    - include_archived: jika False, hanya return class yang tidak diarsip
+    """
+    query = db.query(Class)
+    
+    if not include_archived:
+        query = query.filter(Class.is_archived == False)
+    
+    total = query.count()
+    classes = query.order_by(Class.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return {"total": total, "classes": classes}
+
+

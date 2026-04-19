@@ -243,6 +243,8 @@ class ClassResponse(ClassBase):
     """Schema untuk response class."""
     id: int = Field(..., examples=[1], description="ID class unik")
     instructor_id: int = Field(..., examples=[1], description="ID dosen pengampu")
+    is_archived: bool = Field(default=False, examples=[False], description="Status archive class")
+    archived_at: Optional[datetime] = Field(None, examples=["2024-04-19T15:45:00+00:00"], description="Waktu class diarsip")
     created_at: datetime = Field(..., examples=["2024-04-19T10:30:00+00:00"])
     updated_at: Optional[datetime] = Field(None, examples=["2024-04-19T15:45:00+00:00"])
 
@@ -265,3 +267,5 @@ class ClassDetailResponse(ClassResponse):
 class UserWithClassesResponse(UserResponse):
     """Schema untuk response user dengan list classes."""
     classes: list[ClassResponse] = Field(default=[], description="Daftar class yang diikuti pengguna")
+
+

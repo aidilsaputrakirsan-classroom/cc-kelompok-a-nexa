@@ -30,6 +30,16 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT valid_role CHECK (role IN ('ADMIN', 'DOSEN', 'MAHASISWA'))
 );
 
+-- Add missing columns if they don't exist (for existing users table)
+ALTER TABLE IF EXISTS users
+ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'MAHASISWA';
+
+ALTER TABLE IF EXISTS users
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+
+ALTER TABLE IF EXISTS users
+ADD CONSTRAINT IF NOT EXISTS valid_role CHECK (role IN ('ADMIN', 'DOSEN', 'MAHASISWA'));
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
