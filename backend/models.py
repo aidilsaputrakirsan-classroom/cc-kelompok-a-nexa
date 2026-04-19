@@ -20,12 +20,7 @@ user_class_association = Table(
     Column('class_id', Integer, ForeignKey('classes.id'), primary_key=True),
 )
 
-
 class Item(Base):
-    """
-    Model untuk tabel 'items' di database.
-    Setiap atribut = satu kolom di tabel.
-    """
     __tablename__ = "items"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -33,8 +28,10 @@ class Item(Base):
     description = Column(Text, nullable=True)
     price = Column(Float, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
+    
+    # Perbaikan: Tambahkan server_default agar tidak NULL saat pertama kali dibuat
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     def __repr__(self):
         return f"<Item(id={self.id}, name='{self.name}', price={self.price})>"
@@ -45,7 +42,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    # email: unique=True sudah otomatis membuat index di belakang layar
+    email = Column(String(255), unique=True, nullable=False) 
     name = Column(String(100), nullable=False)
     hashed_password = Column(String(255), nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.MAHASISWA)
