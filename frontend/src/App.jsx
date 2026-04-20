@@ -4,9 +4,16 @@ import SearchBar from "./components/SearchBar"
 import ItemForm from "./components/ItemForm"
 import ItemList from "./components/ItemList"
 import LoginPage from "./components/LoginPage"
+import DashboardStats from "./components/DashboardStats"
+import TeamInfo from "./components/TeamInfo"
+import UserProfileModal from "./components/UserProfileModal"
+import ClassList from "./components/ClassList"
+import ClassForm from "./components/ClassForm"
+import ClassDetail from "./components/ClassDetail"
 import {
   fetchItems, createItem, updateItem, deleteItem,
-  checkHealth, login, register, setToken, clearToken,
+  fetchClasses, createClass, updateClass, deleteClass,
+  checkHealth, login, register, setToken, clearToken, getMe
 } from "./services/api"
 
 function App() {
@@ -15,27 +22,49 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   // ==================== APP STATE ====================
+  const [activeTab, setActiveTab] = useState("inventory") // 'inventory' or 'classes'
+  const [isConnected, setIsConnected] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  
+  // --- Inventory State ---
   const [items, setItems] = useState([])
   const [totalItems, setTotalItems] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [isConnected, setIsConnected] = useState(false)
+  const [loadingItems, setLoadingItems] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [refreshStats, setRefreshStats] = useState(0)
+
+  // --- Classes State ---
+  const [classes, setClasses] = useState([])
+  const [loadingClasses, setLoadingClasses] = useState(false)
+  const [editingClass, setEditingClass] = useState(null)
+  const [selectedClass, setSelectedClass] = useState(null) // For Class Detail
 
   // ==================== LOAD DATA ====================
   const loadItems = useCallback(async (search = "") => {
-    setLoading(true)
+    setLoadingItems(true)
     try {
       const data = await fetchItems(search)
       setItems(data.items)
       setTotalItems(data.total)
     } catch (err) {
-      if (err.message === "UNAUTHORIZED") {
-        handleLogout()
-      }
+      if (err.message === "UNAUTHORIZED") handleLogout()
       console.error("Error loading items:", err)
     } finally {
-      setLoading(false)
+      setLoadingItems(false)
+    }
+  }, [])
+
+  const loadClasses = useCallback(async () => {
+    setLoadingClasses(true)
+    try {
+      const data = await fetchClasses()
+      setClasses(data.classes)
+    } catch (err) {
+      if (err.message === "UNAUTHORIZED") handleLogout()
+      console.error("Error loading classes:", err)
+    } finally {
+      setLoadingClasses(false)
     }
   }, [])
 
@@ -46,20 +75,22 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       loadItems()
+      loadClasses()
+      getMe().then(data => setUser(data)).catch(() => {})
     }
-  }, [isAuthenticated, loadItems])
+  }, [isAuthenticated, loadItems, loadClasses])
 
   // ==================== AUTH HANDLERS ====================
 
   const handleLogin = async (data) => {
-  const res = await login(data)
-  setUser(res.user)
-  setIsAuthenticated(true)
-}
+    const res = await login(data)
+    setUser(res.user)
+    setIsAuthenticated(true)
+  }
+
   const handleRegister = async (userData) => {
-    // Register lalu otomatis login
     await register(userData)
-    await handleLogin({ email: formData.email, password: formData.password })
+    await handleLogin({ email: userData.email, password: userData.password })
   }
 
   const handleLogout = () => {
@@ -67,14 +98,12 @@ function App() {
     setUser(null)
     setIsAuthenticated(false)
     setItems([])
-    setTotalItems(0)
-    setEditingItem(null)
-    setSearchQuery("")
+    setClasses([])
   }
 
   // ==================== ITEM HANDLERS ====================
 
-  const handleSubmit = async (itemData, editId) => {
+  const handleItemSubmit = async (itemData, editId) => {
     try {
       if (editId) {
         await updateItem(editId, itemData)
@@ -83,23 +112,19 @@ function App() {
         await createItem(itemData)
       }
       loadItems(searchQuery)
+      setRefreshStats(prev => prev + 1)
     } catch (err) {
       if (err.message === "UNAUTHORIZED") handleLogout()
       else throw err
     }
   }
 
-  const handleEdit = (item) => {
-    setEditingItem(item)
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }
-
-  const handleDelete = async (id) => {
-    const item = items.find((i) => i.id === id)
-    if (!window.confirm(`Yakin ingin menghapus "${item?.name}"?`)) return
+  const handleItemDelete = async (id) => {
+    if (!window.confirm("Yakin ingin menghapus item ini?")) return
     try {
       await deleteItem(id)
       loadItems(searchQuery)
+      setRefreshStats(prev => prev + 1)
     } catch (err) {
       if (err.message === "UNAUTHORIZED") handleLogout()
       else alert("Gagal menghapus: " + err.message)
@@ -111,14 +136,40 @@ function App() {
     loadItems(query)
   }
 
+  // ==================== CLASS HANDLERS ====================
+
+  const handleClassSubmit = async (classData, editId) => {
+    try {
+      if (editId) {
+        await updateClass(editId, classData)
+        setEditingClass(null)
+      } else {
+        await createClass(classData)
+      }
+      loadClasses()
+    } catch (err) {
+      if (err.message === "UNAUTHORIZED") handleLogout()
+      else throw err
+    }
+  }
+
+  const handleClassDelete = async (id) => {
+    if (!window.confirm("Yakin ingin menghapus kelas ini?")) return
+    try {
+      await deleteClass(id)
+      loadClasses()
+    } catch (err) {
+      if (err.message === "UNAUTHORIZED") handleLogout()
+      else alert("Gagal menghapus: " + err.message)
+    }
+  }
+
   // ==================== RENDER ====================
 
-  // Jika belum login, tampilkan login page
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />
   }
 
-  // Jika sudah login, tampilkan main app
   return (
     <div style={styles.app}>
       <div style={styles.container}>
@@ -127,19 +178,73 @@ function App() {
           isConnected={isConnected}
           user={user}
           onLogout={handleLogout}
+          onOpenProfile={() => setIsProfileOpen(true)}
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab)
+            setSelectedClass(null) // Reset class detail view when switching tabs
+          }}
         />
-        <ItemForm
-          onSubmit={handleSubmit}
-          editingItem={editingItem}
-          onCancelEdit={() => setEditingItem(null)}
-        />
-        <SearchBar onSearch={handleSearch} />
-        <ItemList
-          items={items}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          loading={loading}
-        />
+
+        {isProfileOpen && (
+          <UserProfileModal 
+            user={user} 
+            onClose={() => setIsProfileOpen(false)} 
+            onUpdateSuccess={setUser} 
+          />
+        )}
+
+        {/* INVENTORY TAB */}
+        {activeTab === "inventory" && (
+          <>
+            <DashboardStats refreshTrigger={refreshStats} />
+            <ItemForm
+              onSubmit={handleItemSubmit}
+              editingItem={editingItem}
+              onCancelEdit={() => setEditingItem(null)}
+            />
+            <SearchBar onSearch={handleSearch} />
+            <ItemList
+              items={items}
+              onEdit={(item) => { setEditingItem(item); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              onDelete={handleItemDelete}
+              loading={loadingItems}
+            />
+          </>
+        )}
+
+        {/* CLASSES TAB */}
+        {activeTab === "classes" && (
+          <>
+            {selectedClass ? (
+              <ClassDetail 
+                classItem={selectedClass} 
+                onBack={() => setSelectedClass(null)}
+                currentUser={user}
+              />
+            ) : (
+              <>
+                {user.role === 'admin' && (
+                  <ClassForm
+                    onSubmit={handleClassSubmit}
+                    editingClass={editingClass}
+                    onCancelEdit={() => setEditingClass(null)}
+                  />
+                )}
+                <ClassList 
+                  classes={classes} 
+                  loading={loadingClasses}
+                  currentUser={user}
+                  onSelect={setSelectedClass}
+                  onEdit={(cls) => { setEditingClass(cls); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  onDelete={handleClassDelete}
+                />
+              </>
+            )}
+          </>
+        )}
+
+        <TeamInfo />
       </div>
     </div>
   )
@@ -152,7 +257,7 @@ const styles = {
     padding: "2rem",
     fontFamily: "'Segoe UI', Arial, sans-serif",
   },
-  container: { maxWidth: "900px", margin: "0 auto" },
+  container: { maxWidth: "1000px", margin: "0 auto", paddingBottom: "4rem" },
 }
 
 export default App

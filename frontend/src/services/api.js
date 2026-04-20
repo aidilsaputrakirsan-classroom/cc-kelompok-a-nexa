@@ -61,9 +61,96 @@ export async function login(data) {
   return res
 }
 
+export async function getTeam() {
+  const response = await fetch(`${API_URL}/team`)
+  return handleResponse(response)
+}
+
+// ==================== CLASSES API ====================
+
+export async function fetchClasses(params = {}) {
+  const query = new URLSearchParams()
+  if (params.skip !== undefined) query.append("skip", params.skip)
+  if (params.limit !== undefined) query.append("limit", params.limit)
+  if (params.instructor_id) query.append("instructor_id", params.instructor_id)
+  if (params.semester) query.append("semester", params.semester)
+  
+  const response = await fetch(`${API_URL}/classes?${query.toString()}`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function createClass(classData) {
+  const response = await fetch(`${API_URL}/classes`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(classData),
+  })
+  return handleResponse(response)
+}
+
+export async function updateClass(id, classData) {
+  const response = await fetch(`${API_URL}/classes/${id}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(classData),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteClass(id) {
+  const response = await fetch(`${API_URL}/classes/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  })
+  if (response.status === 204) return null
+  return handleResponse(response)
+}
+
+export async function fetchClassStudents(classId) {
+  const response = await fetch(`${API_URL}/classes/${classId}/students`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function addStudentToClass(classId, userId) {
+  const response = await fetch(`${API_URL}/classes/${classId}/students/${userId}`, {
+    method: "POST",
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function removeStudentFromClass(classId, userId) {
+  const response = await fetch(`${API_URL}/classes/${classId}/students/${userId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  })
+  if (response.status === 204) return null
+  return handleResponse(response)
+}
+
+export async function fetchUserClasses(userId) {
+  const response = await fetch(`${API_URL}/users/${userId}/classes`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
 export async function getMe() {
   const response = await fetch(`${API_URL}/auth/me`, {
     headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function updateProfile(profileData) {
+  const response = await fetch(`${API_URL}/users/profile`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(profileData),
   })
   return handleResponse(response)
 }
@@ -77,6 +164,13 @@ export async function fetchItems(search = "", skip = 0, limit = 20) {
   params.append("limit", limit)
 
   const response = await fetch(`${API_URL}/items?${params}`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function getStats() {
+  const response = await fetch(`${API_URL}/items/stats`, {
     headers: authHeaders(),
   })
   return handleResponse(response)

@@ -9,6 +9,10 @@ function LoginPage({ onLogin, onRegister }) {
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  
+  // Track focus states for inputs
+  const [focusedInput, setFocusedInput] = useState(null)
+  const [hoverBtn, setHoverBtn] = useState(false)
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -44,9 +48,13 @@ function LoginPage({ onLogin, onRegister }) {
 
   return (
     <div style={styles.wrapper}>
+      {/* Decorative Blur Orbs */}
+      <div style={styles.orb1}></div>
+      <div style={styles.orb2}></div>
+
       <div style={styles.card}>
-        <h1 style={styles.title}>☁️ Cloud App</h1>
-        <p style={styles.subtitle}>Komputasi Awan — SI ITK</p>
+        <h1 style={styles.title}>NEXA Cloud</h1>
+        <p style={styles.subtitle}>Sistem Manajemen Inventaris & Kelas</p>
 
         {/* Tab Switch */}
         <div style={styles.tabs}>
@@ -75,14 +83,16 @@ function LoginPage({ onLogin, onRegister }) {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Nama Lengkap"
-                style={styles.input}
+                placeholder="John Doe"
+                onFocus={() => setFocusedInput('name')}
+                onBlur={() => setFocusedInput(null)}
+                style={{ ...styles.input, ...(focusedInput === 'name' ? styles.inputFocus : {}) }}
               />
             </div>
           )}
 
           <div style={styles.field}>
-            <label style={styles.label}>Email</label>
+            <label style={styles.label}>Alamat Email</label>
             <input
               type="email"
               name="email"
@@ -90,7 +100,9 @@ function LoginPage({ onLogin, onRegister }) {
               onChange={handleChange}
               placeholder="email@student.itk.ac.id"
               required
-              style={styles.input}
+              onFocus={() => setFocusedInput('email')}
+              onBlur={() => setFocusedInput(null)}
+              style={{ ...styles.input, ...(focusedInput === 'email' ? styles.inputFocus : {}) }}
             />
           </div>
 
@@ -103,12 +115,20 @@ function LoginPage({ onLogin, onRegister }) {
               onChange={handleChange}
               placeholder="Minimal 8 karakter"
               required
-              style={styles.input}
+              onFocus={() => setFocusedInput('password')}
+              onBlur={() => setFocusedInput(null)}
+              style={{ ...styles.input, ...(focusedInput === 'password' ? styles.inputFocus : {}) }}
             />
           </div>
 
-          <button type="submit" style={styles.btnSubmit} disabled={loading}>
-            {loading ? "⏳ Loading..." : isRegister ? "📝 Register" : "🔐 Login"}
+          <button 
+            type="submit" 
+            style={{ ...styles.btnSubmit, ...(hoverBtn && !loading ? styles.btnSubmitHover : {}) }} 
+            disabled={loading}
+            onMouseEnter={() => setHoverBtn(true)}
+            onMouseLeave={() => setHoverBtn(false)}
+          >
+            {loading ? "⏳ Memproses..." : isRegister ? "Buat Akun" : "Masuk ke Dashboard"}
           </button>
         </form>
       </div>
@@ -122,92 +142,145 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1F4E79",
+    background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
     padding: "2rem",
-    fontFamily: "'Segoe UI', Arial, sans-serif",
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+    position: "relative",
+    overflow: "hidden",
+  },
+  orb1: {
+    position: "absolute",
+    top: "-10%",
+    left: "-10%",
+    width: "400px",
+    height: "400px",
+    background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(0,0,0,0) 70%)",
+    borderRadius: "50%",
+    filter: "blur(40px)",
+    pointerEvents: "none",
+  },
+  orb2: {
+    position: "absolute",
+    bottom: "-10%",
+    right: "-10%",
+    width: "500px",
+    height: "500px",
+    background: "radial-gradient(circle, rgba(56,189,248,0.3) 0%, rgba(0,0,0,0) 70%)",
+    borderRadius: "50%",
+    filter: "blur(60px)",
+    pointerEvents: "none",
   },
   card: {
-    backgroundColor: "white",
-    padding: "2.5rem",
-    borderRadius: "16px",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    padding: "3rem",
+    borderRadius: "24px",
     width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+    maxWidth: "440px",
+    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+    zIndex: 1,
+    color: "white",
   },
   title: {
     textAlign: "center",
-    margin: "0 0 0.25rem 0",
-    color: "#1F4E79",
-    fontSize: "2rem",
+    margin: "0 0 0.5rem 0",
+    background: "linear-gradient(to right, #a855f7, #38bdf8)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    fontSize: "2.5rem",
+    fontWeight: "800",
+    letterSpacing: "-1px",
   },
   subtitle: {
     textAlign: "center",
-    color: "#888",
-    margin: "0 0 1.5rem 0",
-    fontSize: "0.9rem",
+    color: "#94a3b8",
+    margin: "0 0 2.5rem 0",
+    fontSize: "0.95rem",
+    fontWeight: "500",
   },
   tabs: {
     display: "flex",
-    marginBottom: "1.5rem",
-    borderRadius: "8px",
-    overflow: "hidden",
-    border: "2px solid #e0e0e0",
+    marginBottom: "2rem",
+    borderRadius: "12px",
+    background: "rgba(15, 23, 42, 0.6)",
+    padding: "4px",
   },
   tab: {
     flex: 1,
-    padding: "0.7rem",
+    padding: "0.8rem",
     border: "none",
-    backgroundColor: "#f0f0f0",
+    background: "transparent",
     cursor: "pointer",
     fontSize: "0.95rem",
-    fontWeight: "bold",
-    color: "#888",
+    fontWeight: "600",
+    color: "#64748b",
+    borderRadius: "8px",
+    transition: "all 0.3s ease",
   },
   tabActive: {
-    backgroundColor: "#1F4E79",
+    backgroundColor: "#3b82f6",
     color: "white",
+    boxShadow: "0 4px 14px 0 rgba(59, 130, 246, 0.39)",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "1rem",
+    gap: "1.2rem",
   },
   field: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.3rem",
+    gap: "0.4rem",
   },
   label: {
     fontSize: "0.85rem",
-    fontWeight: "bold",
-    color: "#555",
+    fontWeight: "600",
+    color: "#e2e8f0",
+    marginLeft: "0.2rem",
   },
   input: {
-    padding: "0.75rem 1rem",
-    border: "2px solid #ddd",
-    borderRadius: "8px",
+    padding: "0.9rem 1rem",
+    background: "rgba(15, 23, 42, 0.5)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "12px",
     fontSize: "1rem",
+    color: "white",
     outline: "none",
+    transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+  },
+  inputFocus: {
+    borderColor: "#38bdf8",
+    boxShadow: "0 0 0 2px rgba(56, 189, 248, 0.2)",
   },
   btnSubmit: {
-    padding: "0.8rem",
-    backgroundColor: "#548235",
+    padding: "1rem",
+    background: "linear-gradient(to right, #3b82f6, #8b5cf6)",
     color: "white",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "12px",
     cursor: "pointer",
-    fontSize: "1rem",
+    fontSize: "1.05rem",
     fontWeight: "bold",
-    marginTop: "0.5rem",
+    marginTop: "1rem",
+    boxShadow: "0 4px 14px 0 rgba(139, 92, 246, 0.39)",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  },
+  btnSubmitHover: {
+    transform: "translateY(-2px)",
+    boxShadow: "0 6px 20px 0 rgba(139, 92, 246, 0.5)",
   },
   error: {
-    backgroundColor: "#FBE5D6",
-    color: "#C00000",
-    padding: "0.6rem 1rem",
-    borderRadius: "6px",
-    marginBottom: "0.5rem",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    color: "#ef4444",
+    border: "1px solid rgba(239, 68, 68, 0.2)",
+    padding: "0.8rem 1rem",
+    borderRadius: "10px",
+    marginBottom: "1.5rem",
     fontSize: "0.9rem",
     textAlign: "center",
+    fontWeight: "500",
   },
 }
 

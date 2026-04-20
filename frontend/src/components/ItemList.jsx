@@ -3,17 +3,21 @@ import ItemCard from "./ItemCard"
 function ItemList({ items, onEdit, onDelete, loading }) {
 
   if (loading) {
-    return <p style={styles.message}>⏳ Memuat data...</p>
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
+        <p style={{ color: '#888', fontSize: '1.2rem', fontWeight: 'bold' }}>Memuat data inventaris...</p>
+      </div>
+    )
   }
 
-  // Tambahan pengecekan supaya tidak error jika items undefined
   if (!items || items.length === 0) {
     return (
-      <div style={styles.empty}>
-        <p style={styles.emptyIcon}>📭</p>
-        <p style={styles.emptyText}>Belum ada item.</p>
-        <p style={styles.emptyHint}>
-          Gunakan form di atas untuk menambahkan item pertama.
+      <div style={styles.emptyContainer}>
+        <p style={{ fontSize: '4rem', margin: '0 0 1rem 0', opacity: 0.8 }}>📭</p>
+        <p style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: '0 0 0.5rem 0', color: '#1F4E79' }}>Belum ada item.</p>
+        <p style={{ color: '#888' }}>
+          Gunakan form di atas untuk menambahkan item pertama Anda.
         </p>
       </div>
     )
@@ -37,35 +41,29 @@ const styles = {
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-    gap: "1rem",
+    gap: "1.5rem",
+    paddingBottom: "3rem"
   },
-  message: {
-    textAlign: "center",
-    color: "#888",
-    padding: "2rem",
-    fontSize: "1.1rem",
-  },
-  empty: {
-    textAlign: "center",
-    padding: "3rem",
-    backgroundColor: "#f8f9fa",
+  loadingContainer: {
+    backgroundColor: "white",
+    padding: "4rem",
     borderRadius: "12px",
-    border: "2px dashed #ddd",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid #e0e0e0",
   },
-  emptyIcon: {
-    fontSize: "3rem",
-    margin: "0 0 0.5rem 0",
-  },
-  emptyText: {
-    fontSize: "1.1rem",
-    color: "#555",
-    margin: "0 0 0.25rem 0",
-  },
-  emptyHint: {
-    fontSize: "0.9rem",
-    color: "#888",
-    margin: 0,
-  },
+  emptyContainer: {
+    backgroundColor: "white",
+    padding: "4rem",
+    borderRadius: "12px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "2px dashed #ccc",
+  }
 }
 
 export default ItemList

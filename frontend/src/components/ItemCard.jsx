@@ -20,18 +20,24 @@ function ItemCard({ item, onEdit, onDelete }) {
 
   return (
     <div style={styles.card}>
-      <div style={styles.cardHeader}>
-        <h3 style={styles.name}>{item.name}</h3>
-        <span style={styles.price}>{formatRupiah(item.price)}</span>
+      <div style={styles.header}>
+        <h3 style={styles.title}>{item.name}</h3>
+        <span style={styles.priceBadge}>{formatRupiah(item.price)}</span>
       </div>
 
-      {item.description && (
-        <p style={styles.description}>{item.description}</p>
-      )}
+      <p style={styles.description}>
+        {item.description || <span style={{ fontStyle: 'italic', color: '#aaa' }}>Tidak ada deskripsi</span>}
+      </p>
 
-      <div style={styles.meta}>
-        <span style={styles.quantity}>📦 Stok: {item.quantity}</span>
-        <span style={styles.date}>🕐 {formatDate(item.created_at)}</span>
+      <div style={styles.metaInfo}>
+        <div style={styles.metaItem}>
+          <span>📦</span>
+          <span>Stok: <strong style={{ color: '#333' }}>{item.quantity}</strong></span>
+        </div>
+        <div style={styles.metaItem}>
+          <span>🕐</span>
+          <span>{formatDate(item.created_at)}</span>
+        </div>
       </div>
 
       <div style={styles.actions}>
@@ -49,69 +55,80 @@ function ItemCard({ item, onEdit, onDelete }) {
 const styles = {
   card: {
     backgroundColor: "white",
-    padding: "1.25rem",
-    borderRadius: "10px",
+    padding: "1.5rem",
+    borderRadius: "12px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
     border: "1px solid #e0e0e0",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-    transition: "box-shadow 0.2s",
   },
-  cardHeader: {
+  header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: "0.5rem",
+    marginBottom: "1rem",
+    gap: "1rem",
   },
-  name: {
+  title: {
     margin: 0,
-    fontSize: "1.1rem",
+    fontSize: "1.25rem",
+    fontWeight: "bold",
     color: "#1F4E79",
   },
-  price: {
+  priceBadge: {
+    backgroundColor: "#548235",
+    color: "white",
+    padding: "0.4rem 0.8rem",
+    borderRadius: "20px",
+    fontSize: "0.9rem",
     fontWeight: "bold",
-    color: "#548235",
-    fontSize: "1rem",
     whiteSpace: "nowrap",
   },
   description: {
-    color: "#666",
-    fontSize: "0.9rem",
-    margin: "0.25rem 0 0.75rem 0",
+    color: "#555",
+    fontSize: "0.95rem",
+    margin: "0 0 1.5rem 0",
+    flex: 1,
+    lineHeight: 1.5,
   },
-  meta: {
+  metaInfo: {
     display: "flex",
     gap: "1rem",
-    fontSize: "0.8rem",
+    marginBottom: "1rem",
+    paddingTop: "1rem",
+    borderTop: "1px solid #eee",
+    fontSize: "0.85rem",
     color: "#888",
-    marginBottom: "0.75rem",
   },
-  quantity: {},
-  date: {},
+  metaItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.4rem",
+  },
   actions: {
     display: "flex",
     gap: "0.5rem",
-    borderTop: "1px solid #f0f0f0",
-    paddingTop: "0.75rem",
+    marginTop: "auto",
   },
   btnEdit: {
     flex: 1,
-    padding: "0.5rem",
-    backgroundColor: "#DEEBF7",
-    color: "#1F4E79",
+    padding: "0.6rem",
+    backgroundColor: "#f0f2f5",
+    color: "#333",
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
-    fontSize: "0.85rem",
     fontWeight: "bold",
   },
   btnDelete: {
     flex: 1,
-    padding: "0.5rem",
+    padding: "0.6rem",
     backgroundColor: "#FBE5D6",
     color: "#C00000",
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
-    fontSize: "0.85rem",
     fontWeight: "bold",
   },
 }
