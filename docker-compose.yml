@@ -55,7 +55,11 @@ services:
 
   # ==================== FRONTEND ====================
   frontend:
-    image: dzaky975/cc-kelompok-a-nexa-frontend:1.0
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
     container_name: cloudapp-frontend
     restart: unless-stopped
     ports:
