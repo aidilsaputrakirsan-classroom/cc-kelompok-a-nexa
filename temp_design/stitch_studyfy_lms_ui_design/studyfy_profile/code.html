@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Profile - Studyfy</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#b3b0bc",
+                        "primary": "#4e4bd5",
+                        "secondary-fixed": "#d3e4fe",
+                        "secondary-dim": "#44546a",
+                        "primary-container": "#7472fd",
+                        "tertiary-container": "#fcd2fe",
+                        "on-secondary-fixed": "#314055",
+                        "surface-variant": "#e4e1ed",
+                        "on-background": "#32313b",
+                        "primary-fixed-dim": "#6765ef",
+                        "on-primary": "#fbf7ff",
+                        "inverse-primary": "#8382ff",
+                        "on-tertiary-fixed": "#513355",
+                        "tertiary": "#755478",
+                        "error-container": "#f97386",
+                        "tertiary-fixed-dim": "#eec4ef",
+                        "surface-container": "#f0ecf6",
+                        "on-primary-fixed-variant": "#020027",
+                        "error": "#a8364b",
+                        "surface-dim": "#dbd8e4",
+                        "on-primary-container": "#000000",
+                        "error-dim": "#6b0221",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "on-surface": "#32313b",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "surface-tint": "#4e4bd5",
+                        "secondary-container": "#d3e4fe",
+                        "on-secondary": "#f7f9ff",
+                        "surface-container-low": "#f6f2fa",
+                        "surface-container-highest": "#e4e1ed",
+                        "inverse-surface": "#0e0e12",
+                        "tertiary-fixed": "#fcd2fe",
+                        "inverse-on-surface": "#9e9ca2",
+                        "on-tertiary": "#fff7fa",
+                        "primary-fixed": "#7472fd",
+                        "on-tertiary-fixed-variant": "#6f4e73",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#fff7f7",
+                        "surface-bright": "#fcf8fe",
+                        "surface": "#fcf8fe",
+                        "outline": "#7b7984",
+                        "tertiary-dim": "#68486c",
+                        "on-tertiary-container": "#654569",
+                        "on-primary-fixed": "#000000",
+                        "background": "#fcf8fe",
+                        "primary-dim": "#413dc9",
+                        "on-secondary-container": "#435368",
+                        "secondary": "#506076",
+                        "surface-container-high": "#eae6f1",
+                        "on-error-container": "#6e0523",
+                        "on-surface-variant": "#5f5e68"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col py-8 px-4 space-y-2 z-50 overflow-y-auto">
+<div class="mb-8 px-4 flex items-center space-x-3">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-on-primary-container shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div>
+<h1 class="text-2xl font-black text-indigo-600 leading-tight">Studyfy</h1>
+<p class="text-xs text-on-surface-variant font-medium">The Fluid Academy</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-medium text-sm">Courses</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-medium text-sm">Assignments</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-medium text-sm">Grades</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-xl text-indigo-700 dark:text-indigo-300 font-bold border-r-4 border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/10 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-medium text-sm">Profile</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 space-y-1 border-t border-slate-100 dark:border-slate-800">
+<a class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-error">logout</span>
+<span class="font-medium text-sm">Logout</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-64 h-16 z-40 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl flex justify-between items-center px-8 shadow-sm dark:shadow-none">
+<div class="flex items-center space-x-4 bg-slate-100/50 dark:bg-slate-800/50 px-4 py-2 rounded-full w-96 transition-colors hover:bg-slate-100">
+<span class="material-symbols-outlined text-slate-400 text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full" placeholder="Search resources, courses..." type="text"/>
+</div>
+<div class="flex items-center space-x-6">
+<button class="relative p-2 rounded-full hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
+<span class="material-symbols-outlined text-slate-500">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="flex items-center space-x-3">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">Alex Rivera</p>
+<p class="text-[10px] text-on-surface-variant font-medium">Premium Student</p>
+</div>
+<img alt="User profile avatar" class="w-9 h-9 rounded-full object-cover border-2 border-primary-container" data-alt="portrait of a young man with a friendly expression in professional lighting against a soft blurred office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnVM7x_qxag6vxPFknoKecdKvPtz95YayQEyUTQnj_Kmr-ZQwxrkPrPmnMbDw5E6wPxfbsuQGJL0xSZ_u0wCx2YDHWziunHQLIVo6cHTDQlvXSXZf4g0a2H6itOJ-_NFgQnIrd-0uvShuUp98lK60mY9yIrW3NBXvm6hx56N6JniJVSvp2OMQT_JOJtQm4OoQGV3ti_LrDOH7CQHduh3aAGbuNudLUBhczUglJKUh3Hn3G7RZLK3qKgG9xDsFZf1zsOsTkfbh1haM"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen bg-surface">
+<div class="p-8 max-w-6xl mx-auto space-y-8">
+<!-- Bento Profile Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Hero Profile Card -->
+<div class="md:col-span-8 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_12px_32px_rgba(78,75,213,0.06)] relative overflow-hidden">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+<div class="relative flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+<div class="relative group">
+<img alt="Main user profile" class="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] object-cover ring-4 ring-surface-container-low" data-alt="Close up portrait of a young professional man with short dark hair, smiling warmly, studio lighting with soft highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWYjSz_9LxzlfHS3uerYlOcv-AuzwTvOqoNEEbbEDH9-MaCvbpdralzrrCFjsic0HZz7rGzNgB2tgHJ6MF01I-6OBS7kUD5wdKr-SOrtpW2GUL-AGoTOYVtdo_4SD95qOmk6-4Wtw8bKT8wtJnWu511_UCEiDLVKw7VrXBuDif0HLcAG9nI4XH9EAX2l3YFsRBoOjVqZjMjnQIC8KUUfAuYLPj0HQlJN80teS479Vu7P3u5NixHZxr33CF_KBAfjha-OPbGXWH7PE"/>
+<button class="absolute bottom-2 right-2 p-2 bg-primary rounded-xl text-on-primary shadow-lg hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-sm">photo_camera</span>
+</button>
+</div>
+<div class="flex-1 text-center md:text-left pt-4">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h2 class="text-3xl font-extrabold text-on-surface tracking-tight">Alex Rivera</h2>
+<p class="text-on-surface-variant font-medium mt-1">alex.rivera@academy.edu</p>
+<div class="flex flex-wrap justify-center md:justify-start gap-2 mt-4">
+<span class="px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold">Interactive Design Major</span>
+<span class="px-4 py-1.5 bg-tertiary-container text-on-tertiary-container rounded-full text-xs font-bold">Senior Student</span>
+</div>
+</div>
+<button class="flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">edit</span>
+<span>Edit profile</span>
+</button>
+</div>
+</div>
+</div>
+<div class="mt-12 grid grid-cols-3 gap-4 border-t border-surface-container-low pt-8">
+<div class="text-center">
+<p class="text-2xl font-black text-primary">12</p>
+<p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Courses</p>
+</div>
+<div class="text-center border-x border-surface-container-low">
+<p class="text-2xl font-black text-primary">86%</p>
+<p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Completion</p>
+</div>
+<div class="text-center">
+<p class="text-2xl font-black text-primary">4.8</p>
+<p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">GPA</p>
+</div>
+</div>
+</div>
+<!-- Achievements / Sidebar Card -->
+<div class="md:col-span-4 space-y-6">
+<div class="bg-surface-container-low rounded-[2rem] p-6">
+<h3 class="text-lg font-bold mb-4 flex items-center">
+<span class="material-symbols-outlined text-primary mr-2" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+                            Recent Badges
+                        </h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest p-3 rounded-2xl flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-indigo-600">bolt</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface">Fast Learner</span>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-2xl flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-amber-600">emoji_events</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface">Top 1%</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-highest rounded-[2rem] p-6 relative overflow-hidden">
+<h3 class="text-lg font-bold mb-2">Academic Goal</h3>
+<p class="text-sm text-on-surface-variant mb-4">Complete UI Design Mastery by December</p>
+<div class="h-2 w-full bg-white rounded-full">
+<div class="h-full w-[70%] bg-primary rounded-full shadow-[0_0_8px_rgba(78,75,213,0.5)]"></div>
+</div>
+<p class="text-[11px] font-bold mt-2 text-right text-primary">70% Done</p>
+</div>
+</div>
+<!-- Account Settings Section -->
+<div class="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+<!-- Form: Profile Details -->
+<div class="space-y-6">
+<h3 class="text-xl font-bold px-2">Account Information</h3>
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_4px_16px_rgba(0,0,0,0.02)] space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant px-1">First Name</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20" type="text" value="Alex"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant px-1">Last Name</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20" type="text" value="Rivera"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant px-1">Email Address</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20" type="email" value="alex.rivera@academy.edu"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant px-1">Biography</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 resize-none" rows="3">Digital product designer focused on creating intuitive learning experiences through the Fluid Academy ecosystem.</textarea>
+</div>
+<div class="pt-4">
+<button class="w-full py-4 bg-surface-container-high text-primary font-bold rounded-xl hover:bg-primary hover:text-on-primary transition-all duration-200">
+                                    Update Personal Info
+                                </button>
+</div>
+</div>
+</div>
+<!-- Change password section -->
+<div class="space-y-6">
+<h3 class="text-xl font-bold px-2">Security</h3>
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_4px_16px_rgba(0,0,0,0.02)] space-y-4">
+<div class="flex items-center space-x-3 mb-2 p-3 bg-tertiary-container/30 rounded-xl">
+<span class="material-symbols-outlined text-tertiary">lock_reset</span>
+<p class="text-xs font-medium text-on-tertiary-container">Keep your account secure by using a strong, unique password.</p>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant px-1">Current Password</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20" placeholder="••••••••••••" type="password"/>
+<span class="material-symbols-outlined absolute right-4 top-3 text-on-surface-variant cursor-pointer text-sm">visibility</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant px-1">New Password</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20" type="password"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant px-1">Confirm New Password</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20" type="password"/>
+</div>
+<div class="pt-4">
+<button class="w-full py-4 bg-surface-container-high text-primary font-bold rounded-xl hover:bg-primary hover:text-on-primary transition-all duration-200">
+                                    Change Password
+                                </button>
+</div>
+</div>
+<div class="bg-error-container/10 rounded-[2rem] p-6 border border-error/5">
+<div class="flex items-start space-x-4">
+<div class="p-3 bg-error/10 rounded-xl">
+<span class="material-symbols-outlined text-error">dangerous</span>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-on-surface">Danger Zone</h4>
+<p class="text-xs text-on-surface-variant mt-1">Permanently delete your account and all associated course progress.</p>
+<button class="mt-4 text-xs font-bold text-error hover:underline">Delete account</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Studyfy - Course Catalog</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#b3b0bc",
+                    "primary": "#4e4bd5",
+                    "secondary-fixed": "#d3e4fe",
+                    "secondary-dim": "#44546a",
+                    "primary-container": "#7472fd",
+                    "tertiary-container": "#fcd2fe",
+                    "on-secondary-fixed": "#314055",
+                    "surface-variant": "#e4e1ed",
+                    "on-background": "#32313b",
+                    "primary-fixed-dim": "#6765ef",
+                    "on-primary": "#fbf7ff",
+                    "inverse-primary": "#8382ff",
+                    "on-tertiary-fixed": "#513355",
+                    "tertiary": "#755478",
+                    "error-container": "#f97386",
+                    "tertiary-fixed-dim": "#eec4ef",
+                    "surface-container": "#f0ecf6",
+                    "on-primary-fixed-variant": "#020027",
+                    "error": "#a8364b",
+                    "surface-dim": "#dbd8e4",
+                    "on-primary-container": "#000000",
+                    "error-dim": "#6b0221",
+                    "on-secondary-fixed-variant": "#4d5d73",
+                    "on-surface": "#32313b",
+                    "secondary-fixed-dim": "#c5d6f0",
+                    "surface-tint": "#4e4bd5",
+                    "secondary-container": "#d3e4fe",
+                    "on-secondary": "#f7f9ff",
+                    "surface-container-low": "#f6f2fa",
+                    "surface-container-highest": "#e4e1ed",
+                    "inverse-surface": "#0e0e12",
+                    "tertiary-fixed": "#fcd2fe",
+                    "inverse-on-surface": "#9e9ca2",
+                    "on-tertiary": "#fff7fa",
+                    "primary-fixed": "#7472fd",
+                    "on-tertiary-fixed-variant": "#6f4e73",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#fff7f7",
+                    "surface-bright": "#fcf8fe",
+                    "surface": "#fcf8fe",
+                    "outline": "#7b7984",
+                    "tertiary-dim": "#68486c",
+                    "on-tertiary-container": "#654569",
+                    "on-primary-fixed": "#000000",
+                    "background": "#fcf8fe",
+                    "primary-dim": "#413dc9",
+                    "on-secondary-container": "#435368",
+                    "secondary": "#506076",
+                    "surface-container-high": "#eae6f1",
+                    "on-error-container": "#6e0523",
+                    "on-surface-variant": "#5f5e68"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col py-8 px-4 space-y-2 z-40">
+<div class="mb-10 px-4">
+<h1 class="text-2xl font-black text-indigo-600">Studyfy</h1>
+<p class="text-xs text-on-surface-variant font-medium">The Fluid Academy</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-indigo-50 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-indigo-700 font-bold border-r-4 border-indigo-600 bg-indigo-50 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Courses</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-indigo-50 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span>Assignments</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-indigo-50 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="grade">grade</span>
+<span>Grades</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-indigo-50 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span>Profile</span>
+</a>
+</nav>
+<div class="pt-4 border-t border-slate-100 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-indigo-50 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-indigo-50 transition-all duration-200 ease-in-out font-['Plus_Jakarta_Sans'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<header class="fixed top-0 right-0 left-64 h-16 glass-header z-30 flex justify-between items-center px-8 shadow-sm">
+<div class="flex items-center flex-1 max-w-xl bg-surface-container-low rounded-xl px-4 py-2">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full font-body placeholder:text-outline-variant" placeholder="Search for courses, skills, or instructors..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative p-2 rounded-full hover:bg-slate-100/50 transition-colors">
+<span class="material-symbols-outlined text-slate-500" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-bold font-headline text-on-surface">Alex Rivers</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">Premium Learner</p>
+</div>
+<img alt="User profile avatar" class="w-10 h-10 rounded-xl object-cover ring-2 ring-indigo-50" data-alt="Portrait of a young professional student smiling warmly against a soft office background, bright and welcoming lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZtb-8RbKlk8kPfkJzGoxFzTnSHqWodzI8bjzTczRvkL7FOlQ5nsYBI1UTtbJm53JqShZGrAUSvcNepxe16XyrJhTBgDNxJN6xJHH4Zt3FvCJJ07E9WZzQE38e0mJd9F63T0-XV-yTqlBKut0hLjZ9qelM3RIiFc_2Dxp79-c85IsRd5rguwtJgPmi1z5D1ybfQKZcOzKq9C2OKLjtopnNzMkReXtAMroVuL6F3wsdrlBlgP-fE2UpW7MCHQVWwRJ0M-MWs6YQv1s"/>
+</div>
+</div>
+</header>
+<main class="ml-64 pt-24 pb-12 px-8 min-h-screen">
+<div class="max-w-7xl mx-auto">
+<section class="mb-12">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="text-4xl font-extrabold font-headline tracking-tight text-on-surface mb-2">My Learning Path</h2>
+<p class="text-on-surface-variant font-body">Pick up where you left off or explore something new.</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold font-headline flex items-center gap-2 transition-all hover:scale-[1.02] shadow-lg shadow-indigo-200">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+                            Browse All
+                        </button>
+</div>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+<button class="px-6 py-2 bg-primary-container text-on-primary-container rounded-full font-semibold text-sm whitespace-nowrap">All Courses</button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest rounded-full font-semibold text-sm transition-colors whitespace-nowrap">Design Thinking</button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest rounded-full font-semibold text-sm transition-colors whitespace-nowrap">Web Development</button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest rounded-full font-semibold text-sm transition-colors whitespace-nowrap">Data Science</button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest rounded-full font-semibold text-sm transition-colors whitespace-nowrap">Business Strategy</button>
+</div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<div class="group bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0px_12px_32px_rgba(78,75,213,0.06)] border border-outline-variant/10">
+<div class="relative h-48">
+<img alt="UI Design Fundamentals" class="w-full h-full object-cover" data-alt="Abstract colorful geometric 3D shapes representing modern UI design elements with soft purple and blue lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXEfNJfAKNIF40a5nJwJ2OOH95PHI2vLQTbIBuxu88upKOPkXOPyi8wd9CE5dn_udq8R5i8hEbTJKztXkLDgvrhn-NhuOEZMJoPxMFqSGrgRcbWPnqYA_lPme7En68HpJAc0YjVr4KCe6JciUqwN3pCo5WwkjO4dL4qF7MKbZZDZD4EddnDMvWG6rdtHURmK4uDeODEOe_XFzwPOCpV1dE3XWYD-bFgm5SXe9IBwBpPduDm3vXYEYOXIzO4xXfTdnQinQS-IuR2ao"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary">Design</div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 mb-3">
+<img alt="Instructor Sarah" class="w-6 h-6 rounded-full" data-alt="Close up of a friendly female instructor with glasses and a creative studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz4BwZw9X4Cyrwwa59lY9w_YklDqSM5TJZG7ojFZrkeHWeaoiAQmAVuBI5DecMtdsrAoFV04flOaMQql7hNabjL5v5zOCn5OAMC1JzfGHXPdBnTBx-hpyY8QmG9peAaTWNUpM5hI9O5jrXHcvr9wVHJPSfeN305mP7gak_rw1aKxIyjj9Ax99A-u9Tjxz32T6vvteItMNWaI78tigPzfOcnnmFdSi9_BLHlwCtEdpeNFidC8ggqUnC6ZO69ht35zq9G2l1PIS7yaA"/>
+<span class="text-xs text-on-surface-variant font-medium">Sarah Jenkins</span>
+</div>
+<h3 class="text-xl font-bold font-headline mb-4 group-hover:text-primary transition-colors">UI Design Fundamentals: From Theory to High-Fidelity</h3>
+<div class="mb-6">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">Progress</span>
+<span class="text-primary">65%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<button class="w-full bg-surface-container-high text-primary py-4 rounded-xl font-bold font-headline transition-all hover:bg-primary hover:text-on-primary">
+                            View Course
+                        </button>
+</div>
+</div>
+<div class="group bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0px_12px_32px_rgba(78,75,213,0.06)] border border-outline-variant/10">
+<div class="relative h-48">
+<img alt="Fullstack JavaScript" class="w-full h-full object-cover" data-alt="Vibrant glowing neon code on a dark screen with soft bokeh particles in blue and violet" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4ZWz_Amip9NtFBSHNGNMsm4SUxaVN5y-c27Vj_WA30aLq-MPDnayndSGncGMl8siIgKMytJ1SljE0UtEOtg0lY8VOij1UydIzTJ9FE2hIIsg7cVHtOkQ89rWoa1hqljW_PlWEqh-pNCTpThqkpxpXjlnUkjnzsCtB0RffMJLATFQ1lVv-ZdUJq8_BcF78uQHfZa-8dTkAAlXivWc0CfaInUdOwpxi7d_rN-NXa3ozdH4esBYH8axe9Ka4bprd5HaAt6WCWGJz4aw"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary">Development</div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 mb-3">
+<img alt="Instructor Marc" class="w-6 h-6 rounded-full" data-alt="Modern tech professional man sitting at a clean desk with laptop and minimalist workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAI7yQibMR6FXm1yj3Lw7NaZmwckhbxqWK7pe-a6p2S0CJsRtKA7kbeyezoXOtuVSwO_2tJJ01sT-v7fhvH7hjX-yhy2xqmfHxn6zGHa64TRPjmZFhVedtk0LeZ4ZO9MKBFKpjuAwXi0gZvgg8geM09LTdnzKk0SDwlWfXn0xYfSIPgEzhrJFMj3UwdRKIlz4k-4OsTHa2HoDtsiAsl1nnH9Yi0yEtQ3_dNiGTIykZ3WgxCHUuX9yEycnpD3jLKa1q19OMK07jYxaU"/>
+<span class="text-xs text-on-surface-variant font-medium">Marc Davids</span>
+</div>
+<h3 class="text-xl font-bold font-headline mb-4 group-hover:text-primary transition-colors">Advanced JavaScript: Mastering the Modern Ecosystem</h3>
+<div class="mb-6">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">Progress</span>
+<span class="text-primary">12%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full" style="width: 12%"></div>
+</div>
+</div>
+<button class="w-full bg-surface-container-high text-primary py-4 rounded-xl font-bold font-headline transition-all hover:bg-primary hover:text-on-primary">
+                            View Course
+                        </button>
+</div>
+</div>
+<div class="group bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0px_12px_32px_rgba(78,75,213,0.06)] border border-outline-variant/10">
+<div class="relative h-48">
+<img alt="Data Analytics" class="w-full h-full object-cover" data-alt="Elegant complex data visualization charts in translucent glass textures over a clean white space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNlqwdnwO4Cs3SwPZVzN-6ZptkoMfvvAjeINvvWmTTz3egFgcqYzNA91YBYasX185dkKO-hUwzmm6ewbQY5z-A_XHEuRDR7_ka1COzf1OCVE0ZX8rsTV1jVHFLYXDQyZyHFG3MoP2ZgKTM5oUJ4bN1MxwqM8MePWsdibu5lziUeIOW-44NhUTVPlj6QFvojmRseIoNhLoQUZDeV_IXE43spS-sajootRYsN-x4ePLYgl1opxytYHkbab_SzAibWaNoeBVIAqcg8Gk"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary">Data Science</div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 mb-3">
+<img alt="Instructor Elena" class="w-6 h-6 rounded-full" data-alt="Portrait of a serious but approachable academic woman in a modern library setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPlDuEInMBJAP0apw6bE2pNIvK5lqPYVhDh9_PJ48YbFTnkWG3aE0s5VQ6Ryq5WQD9zGC4d5gGC7-Q7bK9ugTfiy46WN2u928hJ-zE-ZXXwKMC1o450Qxs2evY_RFhNV3dz1zQjBPZGlDhPjSXp1HNTprtIM2tXYXfaO2VjM_QYydzs9SP9JqX1AuYtFQiu6LKLiLhdKgPkDV74UMAimLeSnrtZ2sfM450Q2RMpWRj2_IYDf4AewV-wbSU0EB1K04iwNx_HSz7jDw"/>
+<span class="text-xs text-on-surface-variant font-medium">Dr. Elena Wu</span>
+</div>
+<h3 class="text-xl font-bold font-headline mb-4 group-hover:text-primary transition-colors">Predictive Modeling and Statistical Analysis with Python</h3>
+<div class="mb-6">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">Progress</span>
+<span class="text-primary">92%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<button class="w-full bg-surface-container-high text-primary py-4 rounded-xl font-bold font-headline transition-all hover:bg-primary hover:text-on-primary">
+                            View Course
+                        </button>
+</div>
+</div>
+<div class="group bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0px_12px_32px_rgba(78,75,213,0.06)] border border-outline-variant/10">
+<div class="relative h-48">
+<img alt="Product Management" class="w-full h-full object-cover" data-alt="Top down view of a colorful collaborative moodboard with post-it notes and sketches on a light wooden table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuC7ThwQOH0AMPZrEk0z9y9kLNtOXtXwKed9YPsjpHKwHhxxzIfWNePivaQJa1StJX4-7tN7iax2lkIdci1tWuniBtiOuVQMaFQCXUY_a8yLMshocGa3KJFfrELbHLE0IeMJV5O7XFB3tdgMND6wFCidW-lfQ_i18REmIVX-iUfC9Rzc08Ibbx8REEL2dlzo76y5NdA1EcoujSaNUWpjtqm0dTDn4e6hjCBnLqxXG9vnJT9K_eptBbqVyGoD0Mic6hXjJfUtMHHWs"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary">Business</div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 mb-3">
+<img alt="Instructor James" class="w-6 h-6 rounded-full" data-alt="Friendly man in his late 30s wearing a casual shirt, professional portrait with warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRkiyPeosEIW5V9ktPQg6l8ee7r-PTPGksapwxlljsHl_4-pmIk1z30lLOQrq0DoPAVixuwuUZZrs-XumAzk1xrSm_Kwm2tQlb6GRnL8S-oeGE82BqpGCaqsv2TdllMZPRdo_IkJcxyg1MllyPoN_o0txX-TWLi0zkVYDnCnuT9i7Dfy4LrIWEHKoloWf5u8TCtGVL0z8qurbWCHGX_RYpAVykFcIHR_0nS2-tRgJ6ZumR_HwZMb2dX5afrSzctN0kolA5SPzrFF0"/>
+<span class="text-xs text-on-surface-variant font-medium">James Sterling</span>
+</div>
+<h3 class="text-xl font-bold font-headline mb-4 group-hover:text-primary transition-colors">Agile Product Leadership: Leading in Flux</h3>
+<div class="mb-6">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">Progress</span>
+<span class="text-primary">0%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full" style="width: 0%"></div>
+</div>
+</div>
+<button class="w-full bg-surface-container-high text-primary py-4 rounded-xl font-bold font-headline transition-all hover:bg-primary hover:text-on-primary">
+                            View Course
+                        </button>
+</div>
+</div>
+<div class="group bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0px_12px_32px_rgba(78,75,213,0.06)] border border-outline-variant/10">
+<div class="relative h-48">
+<img alt="Motion Design" class="w-full h-full object-cover" data-alt="Abstract 3D liquid metal flowing through space with iridescent colors and cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCaSIrXlglWyf6IF9fJUxWqmSVmKyIFgrBRuFPj-ArQ1HZwTjb5Q8n_8eM4_O9Wj4OO5s_-4Zq3Mmod2DZCKwsK3q1a9RAbudNaexqKCWD6o4p_dycNdTw0N6itKQucZTg-kiNaE8pOXjXkOV8qJzOZ7cs4cGQtlmwwoKMEzYlgX4zEPUUalaAhLvaneLPdcgijFlVW7h3X07d5ZFVd7_na3mODtbdlzpC1iXGXZqH7JRLhT6AYVfe6A8-dFE-_E-yDdzya2Piv5Y"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary">Creative</div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 mb-3">
+<img alt="Instructor Sofia" class="w-6 h-6 rounded-full" data-alt="Young woman with dyed hair and creative outfit in a modern high-tech studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCM1X-QHrt_467FsTJUzRVVQ3R_lTEEofxjsSqs2BTMhWdEy1n8cdDLoVEy5-enJvJsGlrXDHCxGKVf91vyPZsTnRidkxRhu8a7LFsrMphrSL03DCl2Ohf5b5o7sYTBtlWAR1xKiiPwiW8VxFlA0uZpduntLsfQ23um19YuobIajulmLMG41-XilXM8adJLCxxNyx_9D5qmOLbbTVylEvt32VOLOf9sViW0Rf3rhroYPf-fQu3VVdgOM3If2lfsAo8diGq2fuMfVRI"/>
+<span class="text-xs text-on-surface-variant font-medium">Sofia Petrova</span>
+</div>
+<h3 class="text-xl font-bold font-headline mb-4 group-hover:text-primary transition-colors">Motion Graphics in After Effects: A Masterclass</h3>
+<div class="mb-6">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">Progress</span>
+<span class="text-primary">45%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full" style="width: 45%"></div>
+</div>
+</div>
+<button class="w-full bg-surface-container-high text-primary py-4 rounded-xl font-bold font-headline transition-all hover:bg-primary hover:text-on-primary">
+                            View Course
+                        </button>
+</div>
+</div>
+<div class="bg-indigo-600 rounded-[2rem] p-8 flex flex-col justify-center items-center text-center text-white relative overflow-hidden group">
+<div class="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.4),transparent_70%)]"></div>
+<div class="relative z-10">
+<span class="material-symbols-outlined text-5xl mb-4" data-icon="rocket_launch">rocket_launch</span>
+<h3 class="text-2xl font-bold font-headline mb-2">Ready for a challenge?</h3>
+<p class="text-indigo-100 text-sm mb-8">Unlock exclusive certification paths with Studyfy Plus.</p>
+<button class="bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold font-headline shadow-xl transition-all group-hover:scale-110 active:scale-95">
+                            Upgrade Now
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-50">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+</button>
+</body></html>

@@ -124,6 +124,16 @@ def password_reset_verify(reset_data: PasswordResetVerify, db: Session = Depends
     return user
 
 
+@app.get("/users", response_model=list[UserResponse])
+def list_users(
+    role: str | None = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Ambil semua daftar user. Hanya admin/dosen yang bisa."""
+    return crud.get_users(db=db, role=role)
+
+
 # ==================== USER PROFILE ====================
 
 @app.get("/users/profile/{user_id}", response_model=UserWithClassesResponse)
@@ -180,10 +190,19 @@ def list_classes(
     instructor_id: int | None = Query(None),
     semester: int | None = Query(None),
     include_archived: bool = Query(False, description="Include archived classes"),
+    only_archived: bool = Query(False, description="Only archived classes"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List semua classes dengan filter (default exclude archived)."""
+    # Enforce restriction: Dosen only sees their own classes
+    if current_user.role == UserRole.DOSEN:
+        instructor_id = current_user.id
+    elif current_user.role == UserRole.MAHASISWA:
+        # Mahasiswa can see all active classes to potentially browse, 
+        # or we could restrict them too if needed. 
+        # For now, let's keep it open for browsing but they can't manage.
+        pass
+
     result = crud.get_classes(
         db=db,
         skip=skip,
@@ -191,6 +210,7 @@ def list_classes(
         instructor_id=instructor_id,
         semester=semester,
         include_archived=include_archived,
+        only_archived=only_archived,
     )
     return result
 
@@ -205,6 +225,11 @@ def get_class(
     db_class = crud.get_class(db=db, class_id=class_id)
     if not db_class:
         raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Enforce restriction: Dosen only sees their own classes
+    if current_user.role == UserRole.DOSEN and db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda tidak memiliki akses ke kelas ini")
+        
     return db_class
 
 
@@ -246,6 +271,14 @@ def add_student_to_class(
     current_user: User = Depends(require_instructor),
 ):
     """Tambah student ke class. Hanya dosen/admin yang bisa."""
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+        
+    # Enforce ownership: Dosen only manages students in their own classes
+    if current_user.role == UserRole.DOSEN and db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa menambah siswa ke kelas Anda sendiri")
+
     success = crud.add_student_to_class(db=db, class_id=class_id, user_id=user_id)
     if not success:
         raise HTTPException(
@@ -263,6 +296,14 @@ def remove_student_from_class(
     current_user: User = Depends(require_instructor),
 ):
     """Hapus student dari class. Hanya dosen/admin yang bisa."""
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+        
+    # Enforce ownership: Dosen only manages students in their own classes
+    if current_user.role == UserRole.DOSEN and db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa mengeluarkan siswa dari kelas Anda sendiri")
+
     success = crud.remove_student_from_class(db=db, class_id=class_id, user_id=user_id)
     if not success:
         raise HTTPException(
@@ -320,6 +361,24 @@ def archive_class(
     
     archived_class = crud.archive_class(db=db, class_id=class_id)
     return archived_class
+
+
+@app.patch("/classes/{class_id}/unarchive", response_model=ClassResponse)
+def unarchive_class(
+    class_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Unarchive class. Hanya admin yang bisa."""
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    if not db_class.is_archived:
+        raise HTTPException(status_code=400, detail="Class tidak dalam status arsip")
+    
+    unarchived_class = crud.unarchive_class(db=db, class_id=class_id)
+    return unarchived_class
 
 
 

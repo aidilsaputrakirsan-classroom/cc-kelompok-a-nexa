@@ -1,19 +1,15 @@
 import { useState, useEffect, useCallback } from "react"
 import Header from "./components/Header"
-import SearchBar from "./components/SearchBar"
-import ItemForm from "./components/ItemForm"
-import ItemList from "./components/ItemList"
 import LoginPage from "./components/LoginPage"
-import DashboardStats from "./components/DashboardStats"
-import TeamInfo from "./components/TeamInfo"
-import UserProfileModal from "./components/UserProfileModal"
+import Dashboard from "./components/Dashboard"
 import ClassList from "./components/ClassList"
 import ClassForm from "./components/ClassForm"
 import ClassDetail from "./components/ClassDetail"
+import UserProfileModal from "./components/UserProfileModal"
+import TeamInfo from "./components/TeamInfo"
 import {
-  fetchItems, createItem, updateItem, deleteItem,
-  fetchClasses, createClass, updateClass, deleteClass,
-  checkHealth, login, register, setToken, clearToken, getMe
+  fetchClasses, createClass, updateClass, deleteClass, archiveClass, unarchiveClass,
+  checkHealth, login, register, clearToken, getMe
 } from "./services/api"
 
 function App() {
@@ -22,43 +18,27 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   // ==================== APP STATE ====================
-  const [activeTab, setActiveTab] = useState("inventory") // 'inventory' or 'classes'
+  const [activeTab, setActiveTab] = useState("beranda")
   const [isConnected, setIsConnected] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-  
-  // --- Inventory State ---
-  const [items, setItems] = useState([])
-  const [totalItems, setTotalItems] = useState(0)
-  const [loadingItems, setLoadingItems] = useState(false)
-  const [editingItem, setEditingItem] = useState(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [refreshStats, setRefreshStats] = useState(0)
 
   // --- Classes State ---
   const [classes, setClasses] = useState([])
   const [loadingClasses, setLoadingClasses] = useState(false)
   const [editingClass, setEditingClass] = useState(null)
-  const [selectedClass, setSelectedClass] = useState(null) // For Class Detail
+  const [selectedClass, setSelectedClass] = useState(null)
+  const [filters, setFilters] = useState({ semester: "", instructor_id: "" })
 
   // ==================== LOAD DATA ====================
-  const loadItems = useCallback(async (search = "") => {
-    setLoadingItems(true)
-    try {
-      const data = await fetchItems(search)
-      setItems(data.items)
-      setTotalItems(data.total)
-    } catch (err) {
-      if (err.message === "UNAUTHORIZED") handleLogout()
-      console.error("Error loading items:", err)
-    } finally {
-      setLoadingItems(false)
-    }
-  }, [])
-
   const loadClasses = useCallback(async () => {
     setLoadingClasses(true)
     try {
-      const data = await fetchClasses()
+      const params = {}
+      if (filters.semester) params.semester = filters.semester
+      if (filters.instructor_id) params.instructor_id = filters.instructor_id
+      if (activeTab === "archives") params.only_archived = true
+      
+      const data = await fetchClasses(params)
       setClasses(data.classes)
     } catch (err) {
       if (err.message === "UNAUTHORIZED") handleLogout()
@@ -66,7 +46,7 @@ function App() {
     } finally {
       setLoadingClasses(false)
     }
-  }, [])
+  }, [filters, activeTab])
 
   useEffect(() => {
     checkHealth().then(setIsConnected)
@@ -74,14 +54,12 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadItems()
       loadClasses()
       getMe().then(data => setUser(data)).catch(() => {})
     }
-  }, [isAuthenticated, loadItems, loadClasses])
+  }, [isAuthenticated, loadClasses])
 
   // ==================== AUTH HANDLERS ====================
-
   const handleLogin = async (data) => {
     const res = await login(data)
     setUser(res.user)
@@ -97,47 +75,13 @@ function App() {
     clearToken()
     setUser(null)
     setIsAuthenticated(false)
-    setItems([])
     setClasses([])
-  }
-
-  // ==================== ITEM HANDLERS ====================
-
-  const handleItemSubmit = async (itemData, editId) => {
-    try {
-      if (editId) {
-        await updateItem(editId, itemData)
-        setEditingItem(null)
-      } else {
-        await createItem(itemData)
-      }
-      loadItems(searchQuery)
-      setRefreshStats(prev => prev + 1)
-    } catch (err) {
-      if (err.message === "UNAUTHORIZED") handleLogout()
-      else throw err
-    }
-  }
-
-  const handleItemDelete = async (id) => {
-    if (!window.confirm("Yakin ingin menghapus item ini?")) return
-    try {
-      await deleteItem(id)
-      loadItems(searchQuery)
-      setRefreshStats(prev => prev + 1)
-    } catch (err) {
-      if (err.message === "UNAUTHORIZED") handleLogout()
-      else alert("Gagal menghapus: " + err.message)
-    }
-  }
-
-  const handleSearch = (query) => {
-    setSearchQuery(query)
-    loadItems(query)
+    setEditingClass(null)
+    setSelectedClass(null)
+    setActiveTab("beranda")
   }
 
   // ==================== CLASS HANDLERS ====================
-
   const handleClassSubmit = async (classData, editId) => {
     try {
       if (editId) {
@@ -154,7 +98,7 @@ function App() {
   }
 
   const handleClassDelete = async (id) => {
-    if (!window.confirm("Yakin ingin menghapus kelas ini?")) return
+    if (!window.confirm("Yakin ingin menghapus kelas ini secara permanen?")) return
     try {
       await deleteClass(id)
       loadClasses()
@@ -164,100 +108,125 @@ function App() {
     }
   }
 
-  // ==================== RENDER ====================
+  const handleClassArchive = async (id) => {
+    if (!window.confirm("Yakin ingin mengarsipkan kelas ini?")) return
+    try {
+      await archiveClass(id)
+      loadClasses()
+    } catch (err) {
+      if (err.message === "UNAUTHORIZED") handleLogout()
+      else alert("Gagal mengarsip: " + err.message)
+    }
+  }
 
+  const handleClassUnarchive = async (id) => {
+    if (!window.confirm("Keluarkan kelas ini dari arsip?")) return
+    try {
+      await unarchiveClass(id)
+      loadClasses()
+    } catch (err) {
+      if (err.message === "UNAUTHORIZED") handleLogout()
+      else alert("Gagal mengembalikan kelas: " + err.message)
+    }
+  }
+
+  // ==================== RENDER ====================
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />
   }
 
   return (
-    <div style={styles.app}>
-      <div style={styles.container}>
-        <Header
-          totalItems={totalItems}
-          isConnected={isConnected}
+    <div className="bg-surface text-on-surface min-h-screen">
+      <Header
+        isConnected={isConnected}
+        user={user}
+        onLogout={handleLogout}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab)
+          setSelectedClass(null)
+        }}
+      />
+
+      {isProfileOpen && (
+        <UserProfileModal
           user={user}
-          onLogout={handleLogout}
-          onOpenProfile={() => setIsProfileOpen(true)}
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setActiveTab(tab)
-            setSelectedClass(null) // Reset class detail view when switching tabs
-          }}
+          onClose={() => setIsProfileOpen(false)}
+          onUpdateSuccess={setUser}
         />
+      )}
 
-        {isProfileOpen && (
-          <UserProfileModal 
-            user={user} 
-            onClose={() => setIsProfileOpen(false)} 
-            onUpdateSuccess={setUser} 
-          />
+      {/* Main Content Canvas */}
+      <main className="ml-64 pt-24 px-8 pb-12 min-h-screen flex flex-col">
+        {/* BERANDA TAB */}
+        {activeTab === "beranda" && user && (
+          <Dashboard user={user} />
         )}
 
-        {/* INVENTORY TAB */}
-        {activeTab === "inventory" && (
-          <>
-            <DashboardStats refreshTrigger={refreshStats} />
-            <ItemForm
-              onSubmit={handleItemSubmit}
-              editingItem={editingItem}
-              onCancelEdit={() => setEditingItem(null)}
-            />
-            <SearchBar onSearch={handleSearch} />
-            <ItemList
-              items={items}
-              onEdit={(item) => { setEditingItem(item); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              onDelete={handleItemDelete}
-              loading={loadingItems}
-            />
-          </>
-        )}
-
-        {/* CLASSES TAB */}
+        {/* KELAS TAB */}
         {activeTab === "classes" && (
-          <>
+          <div className="flex-1">
             {selectedClass ? (
-              <ClassDetail 
-                classItem={selectedClass} 
+              <ClassDetail
+                classItem={selectedClass}
                 onBack={() => setSelectedClass(null)}
                 currentUser={user}
               />
             ) : (
               <>
-                {user.role === 'admin' && (
+                {user?.role === 'admin' && (
                   <ClassForm
                     onSubmit={handleClassSubmit}
                     editingClass={editingClass}
                     onCancelEdit={() => setEditingClass(null)}
                   />
                 )}
-                <ClassList 
-                  classes={classes} 
+                <ClassList
+                  classes={classes}
                   loading={loadingClasses}
                   currentUser={user}
+                  filters={filters}
+                  onFilterChange={setFilters}
                   onSelect={setSelectedClass}
                   onEdit={(cls) => { setEditingClass(cls); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   onDelete={handleClassDelete}
+                  onArchive={handleClassArchive}
                 />
               </>
             )}
-          </>
+          </div>
         )}
 
-        <TeamInfo />
-      </div>
+        {/* ARSIP KELAS TAB */}
+        {activeTab === "archives" && (
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-on-surface mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">inventory_2</span>
+              Arsip Kelas
+            </h2>
+            <ClassList
+              classes={classes}
+              loading={loadingClasses}
+              currentUser={user}
+              filters={filters}
+              onFilterChange={setFilters}
+              onSelect={setSelectedClass}
+              onEdit={(cls) => { setEditingClass(cls); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              onDelete={handleClassDelete}
+              onArchive={handleClassArchive}
+              onUnarchive={handleClassUnarchive}
+              isArchivePage={true}
+            />
+          </div>
+        )}
+
+        <div className="mt-auto pt-8">
+          <TeamInfo />
+        </div>
+      </main>
     </div>
   )
-}
-
-const styles = {
-  app: {
-    minHeight: "100vh",
-    backgroundColor: "#f0f2f5",
-    padding: "2rem",
-    fontFamily: "'Segoe UI', Arial, sans-serif",
-  },
-  container: { maxWidth: "1000px", margin: "0 auto", paddingBottom: "4rem" },
 }
 
 export default App

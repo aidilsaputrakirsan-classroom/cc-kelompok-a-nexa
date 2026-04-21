@@ -24,7 +24,6 @@ function authHeaders() {
   return headers
 }
 
-// Helper: handle response errors
 async function handleResponse(response) {
   if (response.status === 401) {
     clearToken()
@@ -34,7 +33,6 @@ async function handleResponse(response) {
     const error = await response.json().catch(() => ({}))
     throw new Error(error.detail || `Request gagal (${response.status})`)
   }
-  // 204 No Content
   if (response.status === 204) return null
   return response.json()
 }
@@ -61,8 +59,34 @@ export async function login(data) {
   return res
 }
 
+export async function getMe() {
+  const response = await fetch(`${API_URL}/auth/me`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function fetchUsers(role = null) {
+  const query = role ? `?role=${role}` : ""
+  const response = await fetch(`${API_URL}/users${query}`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
 export async function getTeam() {
   const response = await fetch(`${API_URL}/team`)
+  return handleResponse(response)
+}
+
+// ==================== USER PROFILE ====================
+
+export async function updateProfile(profileData) {
+  const response = await fetch(`${API_URL}/users/profile`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(profileData),
+  })
   return handleResponse(response)
 }
 
@@ -74,7 +98,8 @@ export async function fetchClasses(params = {}) {
   if (params.limit !== undefined) query.append("limit", params.limit)
   if (params.instructor_id) query.append("instructor_id", params.instructor_id)
   if (params.semester) query.append("semester", params.semester)
-  
+  if (params.only_archived) query.append("only_archived", params.only_archived)
+
   const response = await fetch(`${API_URL}/classes?${query.toString()}`, {
     headers: authHeaders(),
   })
@@ -105,6 +130,22 @@ export async function deleteClass(id) {
     headers: authHeaders(),
   })
   if (response.status === 204) return null
+  return handleResponse(response)
+}
+
+export async function archiveClass(id) {
+  const response = await fetch(`${API_URL}/classes/${id}/archive`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function unarchiveClass(id) {
+  const response = await fetch(`${API_URL}/classes/${id}/unarchive`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  })
   return handleResponse(response)
 }
 
@@ -139,66 +180,34 @@ export async function fetchUserClasses(userId) {
   return handleResponse(response)
 }
 
-export async function getMe() {
-  const response = await fetch(`${API_URL}/auth/me`, {
-    headers: authHeaders(),
-  })
-  return handleResponse(response)
-}
-
-export async function updateProfile(profileData) {
-  const response = await fetch(`${API_URL}/users/profile`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(profileData),
-  })
-  return handleResponse(response)
-}
-
-// ==================== ITEMS API ====================
+// ==================== ITEMS API (kept for backend compatibility) ====================
 
 export async function fetchItems(search = "", skip = 0, limit = 20) {
   const params = new URLSearchParams()
   if (search) params.append("search", search)
   params.append("skip", skip)
   params.append("limit", limit)
-
-  const response = await fetch(`${API_URL}/items?${params}`, {
-    headers: authHeaders(),
-  })
+  const response = await fetch(`${API_URL}/items?${params}`, { headers: authHeaders() })
   return handleResponse(response)
 }
 
 export async function getStats() {
-  const response = await fetch(`${API_URL}/items/stats`, {
-    headers: authHeaders(),
-  })
+  const response = await fetch(`${API_URL}/items/stats`, { headers: authHeaders() })
   return handleResponse(response)
 }
 
 export async function createItem(itemData) {
-  const response = await fetch(`${API_URL}/items`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(itemData),
-  })
+  const response = await fetch(`${API_URL}/items`, { method: "POST", headers: authHeaders(), body: JSON.stringify(itemData) })
   return handleResponse(response)
 }
 
 export async function updateItem(id, itemData) {
-  const response = await fetch(`${API_URL}/items/${id}`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(itemData),
-  })
+  const response = await fetch(`${API_URL}/items/${id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(itemData) })
   return handleResponse(response)
 }
 
 export async function deleteItem(id) {
-  const response = await fetch(`${API_URL}/items/${id}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  })
+  const response = await fetch(`${API_URL}/items/${id}`, { method: "DELETE", headers: authHeaders() })
   return handleResponse(response)
 }
 

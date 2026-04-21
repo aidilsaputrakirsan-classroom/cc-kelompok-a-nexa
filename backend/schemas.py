@@ -8,13 +8,7 @@ from enum import Enum
 EMAIL_REGEX = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
 
 
-# === ENUMS ===
-class UserRoleEnum(str, Enum):
-    """User roles untuk RBAC."""
-    ADMIN = "admin"
-    DOSEN = "dosen"
-    MAHASISWA = "mahasiswa"
-
+from models import UserRole
 
 # === BASE SCHEMA ===
 class ItemBase(BaseModel):
@@ -85,6 +79,7 @@ class UserCreate(BaseModel):
         examples=["P@ssword123"],
         description="Password minimal 8 karakter, harus memiliki uppercase, lowercase, angka, dan simbol",
     )
+    role: UserRole = Field(default=UserRole.MAHASISWA, description="Role user (admin, dosen, mahasiswa)")
 
     @field_validator("email")
     @classmethod
@@ -114,7 +109,7 @@ class UserResponse(BaseModel):
     id: int = Field(..., examples=[1], description="ID user unik")
     email: str = Field(..., examples=["user@student.itk.ac.id"], description="Email pengguna")
     name: str = Field(..., examples=["Aidil Saputra"], description="Nama lengkap pengguna")
-    role: UserRoleEnum = Field(..., examples=["mahasiswa"], description="Role pengguna (admin/dosen/mahasiswa)")
+    role: UserRole = Field(..., examples=["mahasiswa"], description="Role pengguna (admin/dosen/mahasiswa)")
     is_active: bool = Field(..., examples=[True], description="Status aktivasi akun")
     phone: Optional[str] = Field(None, examples=["+62812345678"], description="Nomor telepon")
     address: Optional[str] = Field(None, examples=["Jl. Merdeka No. 123, Jakarta"], description="Alamat pengguna")

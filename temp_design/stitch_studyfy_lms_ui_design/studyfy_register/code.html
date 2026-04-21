@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Register | Studyfy</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#b3b0bc",
+                        "primary": "#4e4bd5",
+                        "secondary-fixed": "#d3e4fe",
+                        "secondary-dim": "#44546a",
+                        "primary-container": "#7472fd",
+                        "tertiary-container": "#fcd2fe",
+                        "on-secondary-fixed": "#314055",
+                        "surface-variant": "#e4e1ed",
+                        "on-background": "#32313b",
+                        "primary-fixed-dim": "#6765ef",
+                        "on-primary": "#fbf7ff",
+                        "inverse-primary": "#8382ff",
+                        "on-tertiary-fixed": "#513355",
+                        "tertiary": "#755478",
+                        "error-container": "#f97386",
+                        "tertiary-fixed-dim": "#eec4ef",
+                        "surface-container": "#f0ecf6",
+                        "on-primary-fixed-variant": "#020027",
+                        "error": "#a8364b",
+                        "surface-dim": "#dbd8e4",
+                        "on-primary-container": "#000000",
+                        "error-dim": "#6b0221",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "on-surface": "#32313b",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "surface-tint": "#4e4bd5",
+                        "secondary-container": "#d3e4fe",
+                        "on-secondary": "#f7f9ff",
+                        "surface-container-low": "#f6f2fa",
+                        "surface-container-highest": "#e4e1ed",
+                        "inverse-surface": "#0e0e12",
+                        "tertiary-fixed": "#fcd2fe",
+                        "inverse-on-surface": "#9e9ca2",
+                        "on-tertiary": "#fff7fa",
+                        "primary-fixed": "#7472fd",
+                        "on-tertiary-fixed-variant": "#6f4e73",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#fff7f7",
+                        "surface-bright": "#fcf8fe",
+                        "surface": "#fcf8fe",
+                        "outline": "#7b7984",
+                        "tertiary-dim": "#68486c",
+                        "on-tertiary-container": "#654569",
+                        "on-primary-fixed": "#000000",
+                        "background": "#fcf8fe",
+                        "primary-dim": "#413dc9",
+                        "on-secondary-container": "#435368",
+                        "secondary": "#506076",
+                        "surface-container-high": "#eae6f1",
+                        "on-error-container": "#6e0523",
+                        "on-surface-variant": "#5f5e68"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fluid-gradient-bg {
+            background: linear-gradient(135deg, #fcf8fe 0%, #f6f2fa 100%);
+        }
+        .cta-gradient {
+            background: linear-gradient(135deg, #4e4bd5 0%, #7472fd 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex items-center justify-center p-4">
+<!-- Registration Container -->
+<main class="w-full max-w-[1100px] grid grid-cols-1 md:grid-cols-2 bg-surface-container-low rounded-[2rem] overflow-hidden shadow-2xl shadow-primary/5">
+<!-- Left Side: Branding & Visual (Suppresses Nav Shell per Mandate) -->
+<section class="relative hidden md:flex flex-col justify-between p-12 overflow-hidden bg-primary text-on-primary">
+<!-- Background Image with data-alt -->
+<div class="absolute inset-0 z-0">
+<img alt="Students collaborating" class="w-full h-full object-cover opacity-30 mix-blend-overlay" data-alt="Modern bright study space with diverse group of students working together around a wooden table with laptops and journals, soft natural morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9MmHGo9BxAWRMLGn_ePGYMq-HF1Dr_tuf4_n8djPO6GuNUXQfsu0Jq9IzBQig28qcztAAyuAgVVN-jZWtxz7DL__cniGkoulJmK5K9sq1JcMv8_pWBBUND-r7AdIBjErV5La7U-QavB26zs4zveEibY5ZePj82bUKLuq11nixLOvJpWh85JFKel2ra38PAUd365fuXURvE2Vlbe1hnUhHKE5qTbk3MnFd7Hf45aaCqIj-j8tyQwam9iBUGDhHeHUH6qKPxrHxch8"/>
+<div class="absolute inset-0 bg-gradient-to-br from-primary via-primary-dim to-secondary-dim opacity-90"></div>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-on-primary rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-primary font-bold" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<span class="font-headline font-extrabold text-2xl tracking-tight">Studyfy</span>
+</div>
+</div>
+<div class="relative z-10 max-w-sm">
+<h1 class="font-headline text-5xl font-extrabold leading-[1.1] mb-6 tracking-tight">Join The Fluid Academy.</h1>
+<p class="text-on-primary/80 text-lg leading-relaxed font-light">Experience a workspace that breathes. Start your journey into curated digital learning today.</p>
+</div>
+<div class="relative z-10 flex gap-4">
+<div class="bg-on-primary/10 backdrop-blur-md rounded-xl p-4 flex-1 border border-on-primary/10">
+<p class="text-3xl font-bold font-headline">12k+</p>
+<p class="text-sm opacity-70">Active Students</p>
+</div>
+<div class="bg-on-primary/10 backdrop-blur-md rounded-xl p-4 flex-1 border border-on-primary/10">
+<p class="text-3xl font-bold font-headline">450+</p>
+<p class="text-sm opacity-70">Expert Courses</p>
+</div>
+</div>
+</section>
+<!-- Right Side: Registration Form -->
+<section class="bg-surface-container-lowest p-8 md:p-16 flex flex-col justify-center">
+<div class="mb-10 text-center md:text-left">
+<h2 class="font-headline text-3xl font-bold text-on-surface mb-2">Create your account</h2>
+<p class="text-on-surface-variant">Step into a new era of collaborative learning.</p>
+</div>
+<form action="#" class="space-y-6">
+<!-- Role Selection Chips -->
+<div class="space-y-3">
+<label class="text-sm font-semibold text-on-surface-variant block ml-1">I am a...</label>
+<div class="flex gap-4">
+<label class="flex-1 cursor-pointer group">
+<input checked="" class="peer sr-only" name="role" type="radio" value="student"/>
+<div class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-transparent bg-surface-container-low transition-all peer-checked:bg-primary-container/10 peer-checked:border-primary">
+<span class="material-symbols-outlined mb-1 text-on-surface-variant peer-checked:text-primary">person</span>
+<span class="text-sm font-medium">Student</span>
+</div>
+</label>
+<label class="flex-1 cursor-pointer group">
+<input class="peer sr-only" name="role" type="radio" value="teacher"/>
+<div class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-transparent bg-surface-container-low transition-all peer-checked:bg-primary-container/10 peer-checked:border-primary">
+<span class="material-symbols-outlined mb-1 text-on-surface-variant peer-checked:text-primary">history_edu</span>
+<span class="text-sm font-medium">Teacher</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Fields Grid -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Name -->
+<div class="space-y-1.5">
+<label class="text-sm font-semibold text-on-surface-variant ml-1" for="name">Full Name</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3.5 text-on-surface focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-outline/50" id="name" placeholder="John Doe" type="text"/>
+</div>
+</div>
+<!-- Email -->
+<div class="space-y-1.5">
+<label class="text-sm font-semibold text-on-surface-variant ml-1" for="email">Email Address</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3.5 text-on-surface focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-outline/50" id="email" placeholder="name@studyfy.edu" type="email"/>
+</div>
+</div>
+<!-- Passwords -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-sm font-semibold text-on-surface-variant ml-1" for="password">Password</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3.5 text-on-surface focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-outline/50" id="password" placeholder="••••••••" type="password"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-sm font-semibold text-on-surface-variant ml-1" for="confirm-password">Confirm</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3.5 text-on-surface focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-outline/50" id="confirm-password" placeholder="••••••••" type="password"/>
+</div>
+</div>
+</div>
+<!-- Terms -->
+<div class="flex items-start gap-3 px-1">
+<input class="mt-1 w-5 h-5 rounded border-outline-variant/40 text-primary focus:ring-primary/20" id="terms" type="checkbox"/>
+<label class="text-sm text-on-surface-variant leading-snug" for="terms">
+                        I agree to the <a class="text-primary font-medium hover:underline" href="#">Terms of Service</a> and <a class="text-primary font-medium hover:underline" href="#">Privacy Policy</a>.
+                    </label>
+</div>
+<!-- Action Button -->
+<button class="w-full cta-gradient text-on-primary font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transform active:scale-95 transition-all hover:brightness-110" type="submit">
+                    Create Account
+                </button>
+</form>
+<!-- Footer Link -->
+<div class="mt-10 text-center">
+<p class="text-on-surface-variant">Already have an account? 
+                    <a class="text-primary font-bold hover:underline ml-1" href="#">Log in here</a>
+</p>
+</div>
+</section>
+</main>
+<!-- Decorative Background Elements -->
+<div class="fixed top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="fixed bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-tertiary/5 rounded-full blur-[120px] pointer-events-none"></div>
+</body></html>

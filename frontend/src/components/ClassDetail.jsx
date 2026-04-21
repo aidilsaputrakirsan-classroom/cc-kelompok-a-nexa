@@ -3,6 +3,7 @@ import { fetchClassStudents, addStudentToClass, removeStudentFromClass } from ".
 
 function ClassDetail({ classItem, onBack, currentUser }) {
   const [students, setStudents] = useState([])
+  const [availableStudents, setAvailableStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [newStudentId, setNewStudentId] = useState("")
   const [error, setError] = useState("")
@@ -14,23 +15,34 @@ function ClassDetail({ classItem, onBack, currentUser }) {
       setStudents(data)
     } catch (err) {
       console.error(err)
-      setError("Gagal memuat mahasiswa")
+      setError("Gagal memuat daftar siswa")
     } finally {
       setLoading(false)
     }
   }
 
+  const loadAvailableStudents = async () => {
+    try {
+      const { fetchUsers } = await import("../services/api")
+      const allUsers = await fetchUsers("mahasiswa")
+      setAvailableStudents(allUsers)
+    } catch (err) {
+      console.error("Gagal memuat daftar semua siswa:", err)
+    }
+  }
+
   useEffect(() => {
     loadStudents()
+    loadAvailableStudents()
   }, [classItem.id])
 
   const handleAddStudent = async (e) => {
     e.preventDefault()
     if (!newStudentId) return
-    
+    const userId = parseInt(newStudentId)
     setError("")
     try {
-      await addStudentToClass(classItem.id, newStudentId)
+      await addStudentToClass(classItem.id, userId)
       setNewStudentId("")
       loadStudents()
     } catch (err) {
@@ -39,7 +51,7 @@ function ClassDetail({ classItem, onBack, currentUser }) {
   }
 
   const handleRemoveStudent = async (userId) => {
-    if (!window.confirm("Keluarkan mahasiswa dari kelas?")) return
+    if (!window.confirm("Keluarkan siswa dari kelas ini?")) return
     try {
       await removeStudentFromClass(classItem.id, userId)
       loadStudents()
@@ -48,212 +60,154 @@ function ClassDetail({ classItem, onBack, currentUser }) {
     }
   }
 
-  const isInstructorOrAdmin = currentUser.role === 'admin' || currentUser.role === 'dosen'
+  const canManage = currentUser.role === 'admin' || (currentUser.role === 'dosen' && classItem.instructor_id === currentUser.id)
+  const unassignedStudents = availableStudents.filter(as => !students.some(s => s.id === as.id))
+
+  const avatarColors = ['from-indigo-500 to-purple-600', 'from-blue-500 to-cyan-600', 'from-violet-500 to-pink-600', 'from-emerald-500 to-teal-600']
 
   return (
-    <div style={styles.container}>
-      <button onClick={onBack} style={styles.btnBack}>← Kembali ke Daftar Kelas</button>
-      
-      <div style={styles.header}>
-        <div>
-          <h2 style={styles.title}>{classItem.name} ({classItem.code})</h2>
-          <p style={styles.subtitle}>{classItem.academic_year} - Semester {classItem.semester}</p>
+    <div>
+      {/* Back Button */}
+      <button 
+        onClick={onBack} 
+        className="flex items-center gap-2 text-primary font-semibold text-sm mb-6 hover:gap-3 transition-all group"
+      >
+        <span className="material-symbols-outlined text-xl group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        Kembali ke Daftar Kelas
+      </button>
+
+      {/* Class Header */}
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 overflow-hidden shadow-sm mb-6">
+        <div className="h-40 bg-gradient-to-br from-indigo-500 to-purple-600 relative flex items-center px-8">
+          <div className="absolute inset-0 opacity-20">
+            <span className="material-symbols-outlined text-white absolute right-8 bottom-4 text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>menu_book</span>
+          </div>
+          <div className="relative z-10">
+            <span className="bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{classItem.code}</span>
+            <h2 className="text-3xl font-extrabold text-white mt-2 mb-1">{classItem.name}</h2>
+            <p className="text-indigo-100 text-sm">Semester {classItem.semester} • {classItem.academic_year}</p>
+          </div>
         </div>
-        <div style={styles.instructorBadge}>ID Dosen: {classItem.instructor_id}</div>
+        <div className="p-6">
+          <div className="flex flex-wrap gap-3 mb-4">
+            <span className="flex items-center gap-2 bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-xl text-sm font-medium">
+              <span className="material-symbols-outlined text-base">person</span>
+              ID Guru: {classItem.instructor_id}
+            </span>
+            <span className="flex items-center gap-2 bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-xl text-sm font-medium">
+              <span className="material-symbols-outlined text-base">calendar_month</span>
+              {classItem.academic_year}
+            </span>
+            {classItem.max_students && (
+              <span className="flex items-center gap-2 bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-xl text-sm font-medium">
+                <span className="material-symbols-outlined text-base">group</span>
+                Kapasitas: {classItem.max_students} mahasiswa
+              </span>
+            )}
+          </div>
+          {classItem.description && (
+            <p className="text-on-surface-variant text-sm leading-relaxed">{classItem.description}</p>
+          )}
+        </div>
       </div>
 
-      {classItem.description && <p style={styles.description}>{classItem.description}</p>}
-      
-      {error && <div style={styles.error}>{error}</div>}
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 flex items-center gap-3 bg-error-container/10 border border-error/20 p-4 rounded-xl">
+          <span className="material-symbols-outlined text-error text-xl">error</span>
+          <p className="text-error text-sm font-medium">{error}</p>
+        </div>
+      )}
 
-      <div style={styles.content}>
-        <div style={styles.sectionTitle}>
-          Daftar Mahasiswa ({students.length}{classItem.max_students ? ` / ${classItem.max_students}` : ''})
+      {/* Students Section */}
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 shadow-sm overflow-hidden">
+        {/* Section Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/10">
+          <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
+            Daftar Mahasiswa
+            <span className="ml-1 bg-primary/10 text-primary text-sm font-bold px-2 py-0.5 rounded-full">
+              {students.length}{classItem.max_students ? ` / ${classItem.max_students}` : ''}
+            </span>
+          </h3>
         </div>
 
-        {isInstructorOrAdmin && (
-          <form onSubmit={handleAddStudent} style={styles.addForm}>
-            <input 
-              type="number" 
-              placeholder="ID User Mahasiswa" 
-              value={newStudentId} 
-              onChange={e => setNewStudentId(e.target.value)}
-              style={styles.input}
-            />
-            <button type="submit" style={styles.btnAdd}>Tambah Mahasiswa</button>
-          </form>
-        )}
-
-        {loading ? (
-          <div style={styles.loading}>Memuat mahasiswa...</div>
-        ) : students.length === 0 ? (
-          <div style={styles.empty}>Belum ada mahasiswa di kelas ini.</div>
-        ) : (
-          <div style={styles.list}>
-            {students.map(student => (
-              <div key={student.id} style={styles.studentCard}>
-                <div style={styles.studentInfo}>
-                  <div style={styles.avatar}>{student.name.charAt(0)}</div>
-                  <div>
-                    <div style={styles.studentName}>{student.name}</div>
-                    <div style={styles.studentEmail}>{student.email}</div>
-                  </div>
-                </div>
-                {isInstructorOrAdmin && (
-                  <button onClick={() => handleRemoveStudent(student.id)} style={styles.btnRemove}>Keluarkan</button>
-                )}
+        {/* Add Student Form */}
+        {canManage && (
+          <div className="px-6 py-4 border-b border-outline-variant/10 bg-surface-container-low/50">
+            <form onSubmit={handleAddStudent} className="flex gap-3 items-center">
+              <div className="relative flex-1 max-w-sm">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-base">person_add</span>
+                <select
+                  value={newStudentId}
+                  onChange={e => setNewStudentId(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant/20 rounded-xl text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Pilih mahasiswa untuk ditambahkan...</option>
+                  {unassignedStudents.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.email})
+                    </option>
+                  ))}
+                </select>
               </div>
-            ))}
+              <button 
+                type="submit" 
+                disabled={!newStudentId}
+                className="primary-gradient text-on-primary px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+              >
+                <span className="material-symbols-outlined text-base">add</span>
+                Tambah Mahasiswa
+              </button>
+            </form>
           </div>
         )}
+
+        {/* Student List */}
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <span className="material-symbols-outlined text-4xl text-primary animate-spin">progress_activity</span>
+            </div>
+          ) : students.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3">group_off</span>
+              <p className="text-on-surface font-semibold mb-1">Belum ada mahasiswa</p>
+              <p className="text-on-surface-variant text-sm">Tambahkan mahasiswa ke kelas ini menggunakan form di atas.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {students.map((student, idx) => (
+                <div 
+                  key={student.id} 
+                  className="flex items-center justify-between p-4 rounded-xl bg-surface-container-low/50 hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant/10"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarColors[idx % avatarColors.length]} text-white flex items-center justify-center font-bold text-base flex-shrink-0`}>
+                      {student.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-on-surface">{student.name}</p>
+                      <p className="text-xs text-on-surface-variant">{student.email}</p>
+                    </div>
+                  </div>
+                  {canManage && (
+                    <button 
+                      onClick={() => handleRemoveStudent(student.id)} 
+                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-500 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">person_remove</span>
+                      Keluarkan
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
-}
-
-const styles = {
-  container: {
-    backgroundColor: "white",
-    padding: "2rem",
-    borderRadius: "12px",
-    border: "1px solid #e0e0e0",
-    marginBottom: "2rem",
-  },
-  btnBack: {
-    background: "none",
-    border: "none",
-    color: "#1F4E79",
-    fontWeight: "bold",
-    cursor: "pointer",
-    padding: 0,
-    marginBottom: "1.5rem",
-    fontSize: "0.95rem"
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "1rem"
-  },
-  title: {
-    margin: "0 0 0.25rem 0",
-    color: "#1F4E79",
-    fontSize: "1.5rem",
-  },
-  subtitle: {
-    margin: 0,
-    color: "#555",
-    fontWeight: "bold",
-  },
-  instructorBadge: {
-    backgroundColor: "#f0f2f5",
-    padding: "0.4rem 1rem",
-    borderRadius: "20px",
-    fontSize: "0.85rem",
-    fontWeight: "bold",
-    color: "#1F4E79"
-  },
-  description: {
-    color: "#555",
-    marginBottom: "2rem",
-    lineHeight: 1.5,
-  },
-  sectionTitle: {
-    fontSize: "1.2rem",
-    fontWeight: "bold",
-    color: "#1F4E79",
-    borderBottom: "2px solid #e0e0e0",
-    paddingBottom: "0.5rem",
-    marginBottom: "1rem"
-  },
-  addForm: {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "1.5rem"
-  },
-  input: {
-    padding: "0.6rem 0.8rem",
-    border: "2px solid #ddd",
-    borderRadius: "6px",
-    fontSize: "0.95rem",
-    outline: "none",
-    width: "200px"
-  },
-  btnAdd: {
-    padding: "0.6rem 1.5rem",
-    backgroundColor: "#548235",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-  error: {
-    backgroundColor: "#FBE5D6",
-    color: "#C00000",
-    padding: "0.6rem 1rem",
-    borderRadius: "6px",
-    marginBottom: "1rem",
-    fontSize: "0.9rem",
-  },
-  loading: {
-    textAlign: "center",
-    padding: "2rem",
-    color: "#888"
-  },
-  empty: {
-    textAlign: "center",
-    padding: "2rem",
-    color: "#888",
-    fontStyle: "italic",
-    border: "1px dashed #ccc",
-    borderRadius: "8px"
-  },
-  list: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.8rem"
-  },
-  studentCard: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "1rem",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "8px",
-    border: "1px solid #e0e0e0",
-  },
-  studentInfo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem"
-  },
-  avatar: {
-    width: '40px', height: '40px',
-    borderRadius: '50%',
-    backgroundColor: '#1F4E79',
-    color: 'white',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontWeight: 'bold', fontSize: '1.2rem'
-  },
-  studentName: {
-    fontWeight: "bold",
-    color: "#333",
-  },
-  studentEmail: {
-    fontSize: "0.85rem",
-    color: "#888"
-  },
-  btnRemove: {
-    padding: "0.4rem 1rem",
-    backgroundColor: "#FBE5D6",
-    color: "#C00000",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "bold",
-    fontSize: "0.85rem"
-  }
 }
 
 export default ClassDetail

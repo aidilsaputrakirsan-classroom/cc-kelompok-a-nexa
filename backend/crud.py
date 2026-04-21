@@ -103,11 +103,20 @@ def create_user(db: Session, user_data: UserCreate) -> User:
         email=user_data.email,
         name=user_data.name,
         hashed_password=hash_password(user_data.password),
+        role=user_data.role,
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def get_users(db: Session, role: str = None) -> list[User]:
+    """Ambil semua user, opsional filter berdasarkan role."""
+    query = db.query(User)
+    if role:
+        query = query.filter(User.role == role)
+    return query.all()
 
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
@@ -196,12 +205,14 @@ def get_classes(
     instructor_id: int | None = None,
     semester: int | None = None,
     include_archived: bool = False,
+    only_archived: bool = False,
 ) -> dict:
     """Ambil daftar classes dengan filter (default exclude archived classes)."""
     query = db.query(Class)
     
-    # Default: exclude archived classes
-    if not include_archived:
+    if only_archived:
+        query = query.filter(Class.is_archived == True)
+    elif not include_archived:
         query = query.filter(Class.is_archived == False)
     
     if instructor_id:
@@ -314,6 +325,19 @@ def archive_class(db: Session, class_id: int) -> Class:
     
     db_class.is_archived = True
     db_class.archived_at = datetime.now()
+    db.commit()
+    db.refresh(db_class)
+    return db_class
+
+
+def unarchive_class(db: Session, class_id: int) -> Class:
+    """Unarchive class (restore)."""
+    db_class = db.query(Class).filter(Class.id == class_id).first()
+    if not db_class:
+        return None
+    
+    db_class.is_archived = False
+    db_class.archived_at = None
     db.commit()
     db.refresh(db_class)
     return db_class

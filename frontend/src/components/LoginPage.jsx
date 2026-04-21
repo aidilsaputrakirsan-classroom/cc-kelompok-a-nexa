@@ -1,18 +1,11 @@
-import { useState } from "react"
+import React, { useState } from "react"
 
 function LoginPage({ onLogin, onRegister }) {
   const [isRegister, setIsRegister] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    name: "",
-  })
+  const [formData, setFormData] = useState({ email: "", password: "", name: "", role: "mahasiswa" })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  
-  // Track focus states for inputs
-  const [focusedInput, setFocusedInput] = useState(null)
-  const [hoverBtn, setHoverBtn] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -22,20 +15,15 @@ function LoginPage({ onLogin, onRegister }) {
     e.preventDefault()
     setError("")
     setLoading(true)
-
     try {
       if (isRegister) {
-        if (!formData.name.trim()) {
-          setError("Nama wajib diisi")
-          setLoading(false)
-          return
-        }
-        if (formData.password.length < 8) {
-          setError("Password minimal 8 karakter")
-          setLoading(false)
-          return
-        }
-        await onRegister(formData)
+        if (!formData.name.trim()) { setError("Nama wajib diisi"); setLoading(false); return }
+        if (formData.password.length < 8) { setError("Password minimal 8 karakter"); setLoading(false); return }
+        if (!/[A-Z]/.test(formData.password)) { setError("Password harus mengandung huruf besar (A-Z)"); setLoading(false); return }
+        if (!/[a-z]/.test(formData.password)) { setError("Password harus mengandung huruf kecil (a-z)"); setLoading(false); return }
+        if (!/\d/.test(formData.password)) { setError("Password harus mengandung angka"); setLoading(false); return }
+        if (!/[^\w\s]/.test(formData.password)) { setError("Password harus mengandung simbol (!@#$%)"); setLoading(false); return }
+        await onRegister({ email: formData.email, password: formData.password, name: formData.name, role: formData.role })
       } else {
         await onLogin({ email: formData.email, password: formData.password })
       }
@@ -47,241 +35,183 @@ function LoginPage({ onLogin, onRegister }) {
   }
 
   return (
-    <div style={styles.wrapper}>
-      {/* Decorative Blur Orbs */}
-      <div style={styles.orb1}></div>
-      <div style={styles.orb2}></div>
-
-      <div style={styles.card}>
-        <h1 style={styles.title}>NEXA Cloud</h1>
-        <p style={styles.subtitle}>Sistem Manajemen Inventaris & Kelas</p>
-
-        {/* Tab Switch */}
-        <div style={styles.tabs}>
-          <button
-            style={{ ...styles.tab, ...(isRegister ? {} : styles.tabActive) }}
-            onClick={() => { setIsRegister(false); setError("") }}
-          >
-            Login
-          </button>
-          <button
-            style={{ ...styles.tab, ...(isRegister ? styles.tabActive : {}) }}
-            onClick={() => { setIsRegister(true); setError("") }}
-          >
-            Register
-          </button>
-        </div>
-
-        {error && <div style={styles.error}>{error}</div>}
-
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {isRegister && (
-            <div style={styles.field}>
-              <label style={styles.label}>Nama Lengkap</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="John Doe"
-                onFocus={() => setFocusedInput('name')}
-                onBlur={() => setFocusedInput(null)}
-                style={{ ...styles.input, ...(focusedInput === 'name' ? styles.inputFocus : {}) }}
-              />
+    <div className="bg-surface text-on-surface min-h-screen flex flex-col">
+      <main className="flex-grow flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Background Fluid Shapes */}
+        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-tertiary-container/20 rounded-full blur-[100px] -z-10"></div>
+        <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] bg-primary-container/10 rounded-full blur-[80px] -z-10"></div>
+        
+        <div className="w-full max-w-[440px] z-10">
+          {/* Brand Logo Center */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-14 h-14 primary-gradient rounded-xl flex items-center justify-center mb-4 tonal-elevation">
+              <span className="material-symbols-outlined text-on-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
             </div>
-          )}
-
-          <div style={styles.field}>
-            <label style={styles.label}>Alamat Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="email@student.itk.ac.id"
-              required
-              onFocus={() => setFocusedInput('email')}
-              onBlur={() => setFocusedInput(null)}
-              style={{ ...styles.input, ...(focusedInput === 'email' ? styles.inputFocus : {}) }}
-            />
+            <h1 className="text-3xl font-extrabold text-on-background tracking-tight">Studyfy</h1>
+            <p className="text-on-surface-variant font-medium mt-1">The Fluid Academy</p>
           </div>
+          
+          {/* Login Card */}
+          <div className="bg-surface-container-lowest rounded-[2rem] p-8 md:p-10 tonal-elevation border border-outline-variant/10">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-on-background mb-2">{isRegister ? "Create Account" : "Welcome Back"}</h2>
+              <p className="text-on-surface-variant text-sm">
+                {isRegister ? "Join Studyfy and start your learning journey." : "Please enter your details to sign in to your workspace."}
+              </p>
+            </div>
+            
+            {/* Error Message UI */}
+            {error && (
+              <div className="mb-6 flex items-center gap-3 bg-error-container/10 border border-error/20 p-4 rounded-xl">
+                <span className="material-symbols-outlined text-error text-xl">error</span>
+                <p className="text-error text-sm font-medium">{error}</p>
+              </div>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {isRegister && (
+                <>
+                  {/* Name Field */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-on-surface-variant ml-1" htmlFor="name">Full Name</label>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">person</span>
+                      <input 
+                        type="text" 
+                        id="name" 
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="John Doe" 
+                        className="w-full pl-12 pr-4 py-4 bg-surface-container-low border border-outline-variant/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface"
+                      />
+                    </div>
+                  </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Minimal 8 karakter"
-              required
-              onFocus={() => setFocusedInput('password')}
-              onBlur={() => setFocusedInput(null)}
-              style={{ ...styles.input, ...(focusedInput === 'password' ? styles.inputFocus : {}) }}
-            />
+                  {/* Role Selector */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-on-surface-variant ml-1">Register As</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, role: 'admin' }))}
+                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'admin' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-high'}`}
+                      >
+                        Admin
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, role: 'dosen' }))}
+                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'dosen' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-high'}`}
+                      >
+                        Dosen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, role: 'mahasiswa' }))}
+                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'mahasiswa' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-high'}`}
+                      >
+                        Mahasiswa
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-on-surface-variant ml-1" htmlFor="email">Email</label>
+                <div className="relative group">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">mail</span>
+                  <input 
+                    type="email" 
+                    id="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="student@studyfy.edu" 
+                    className="w-full pl-12 pr-4 py-4 bg-surface-container-low border border-outline-variant/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface"
+                  />
+                </div>
+              </div>
+              
+              {/* Password Field */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center ml-1">
+                  <label className="text-sm font-semibold text-on-surface-variant" htmlFor="password">Password</label>
+                  {!isRegister && <button type="button" className="text-xs font-bold text-primary hover:text-primary-dim transition-colors">Forgot Password?</button>}
+                </div>
+                <div className="relative group">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">lock</span>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    id="password" 
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    placeholder="••••••••" 
+                    className="w-full pl-12 pr-12 py-4 bg-surface-container-low border border-outline-variant/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface-variant transition-colors"
+                  >
+                    <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Submit Button */}
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full primary-gradient text-on-primary font-bold py-4 rounded-xl tonal-elevation hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{isRegister ? "Create Account" : "Sign In"}</span>
+                    <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </>
+                )}
+              </button>
+            </form>
+            
           </div>
+          
+          {/* Footer Toggle */}
+          <div className="mt-8 text-center">
+            <p className="text-on-surface-variant font-medium">
+              {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+              <button 
+                onClick={() => { setIsRegister(!isRegister); setError(""); }}
+                className="text-primary font-bold hover:underline underline-offset-4 decoration-2 transition-all"
+              >
+                {isRegister ? "Sign in here" : "Register for free"}
+              </button>
+            </p>
+          </div>
+        </div>
+      </main>
 
-          <button 
-            type="submit" 
-            style={{ ...styles.btnSubmit, ...(hoverBtn && !loading ? styles.btnSubmitHover : {}) }} 
-            disabled={loading}
-            onMouseEnter={() => setHoverBtn(true)}
-            onMouseLeave={() => setHoverBtn(false)}
-          >
-            {loading ? "⏳ Memproses..." : isRegister ? "Buat Akun" : "Masuk ke Dashboard"}
-          </button>
-        </form>
+      {/* Illustrative Texture/Image */}
+      <div className="hidden lg:block fixed top-0 right-0 w-1/3 h-full -z-20">
+        <div className="w-full h-full opacity-20 bg-gradient-to-br from-primary/30 to-tertiary/20"></div>
+        <img 
+          src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1000" 
+          alt="Modern minimalist university architecture" 
+          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay grayscale opacity-40"
+        />
       </div>
     </div>
   )
-}
-
-const styles = {
-  wrapper: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
-    padding: "2rem",
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-    position: "relative",
-    overflow: "hidden",
-  },
-  orb1: {
-    position: "absolute",
-    top: "-10%",
-    left: "-10%",
-    width: "400px",
-    height: "400px",
-    background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(0,0,0,0) 70%)",
-    borderRadius: "50%",
-    filter: "blur(40px)",
-    pointerEvents: "none",
-  },
-  orb2: {
-    position: "absolute",
-    bottom: "-10%",
-    right: "-10%",
-    width: "500px",
-    height: "500px",
-    background: "radial-gradient(circle, rgba(56,189,248,0.3) 0%, rgba(0,0,0,0) 70%)",
-    borderRadius: "50%",
-    filter: "blur(60px)",
-    pointerEvents: "none",
-  },
-  card: {
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    padding: "3rem",
-    borderRadius: "24px",
-    width: "100%",
-    maxWidth: "440px",
-    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-    zIndex: 1,
-    color: "white",
-  },
-  title: {
-    textAlign: "center",
-    margin: "0 0 0.5rem 0",
-    background: "linear-gradient(to right, #a855f7, #38bdf8)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    fontSize: "2.5rem",
-    fontWeight: "800",
-    letterSpacing: "-1px",
-  },
-  subtitle: {
-    textAlign: "center",
-    color: "#94a3b8",
-    margin: "0 0 2.5rem 0",
-    fontSize: "0.95rem",
-    fontWeight: "500",
-  },
-  tabs: {
-    display: "flex",
-    marginBottom: "2rem",
-    borderRadius: "12px",
-    background: "rgba(15, 23, 42, 0.6)",
-    padding: "4px",
-  },
-  tab: {
-    flex: 1,
-    padding: "0.8rem",
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    fontSize: "0.95rem",
-    fontWeight: "600",
-    color: "#64748b",
-    borderRadius: "8px",
-    transition: "all 0.3s ease",
-  },
-  tabActive: {
-    backgroundColor: "#3b82f6",
-    color: "white",
-    boxShadow: "0 4px 14px 0 rgba(59, 130, 246, 0.39)",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.2rem",
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.4rem",
-  },
-  label: {
-    fontSize: "0.85rem",
-    fontWeight: "600",
-    color: "#e2e8f0",
-    marginLeft: "0.2rem",
-  },
-  input: {
-    padding: "0.9rem 1rem",
-    background: "rgba(15, 23, 42, 0.5)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    borderRadius: "12px",
-    fontSize: "1rem",
-    color: "white",
-    outline: "none",
-    transition: "border-color 0.3s ease, box-shadow 0.3s ease",
-  },
-  inputFocus: {
-    borderColor: "#38bdf8",
-    boxShadow: "0 0 0 2px rgba(56, 189, 248, 0.2)",
-  },
-  btnSubmit: {
-    padding: "1rem",
-    background: "linear-gradient(to right, #3b82f6, #8b5cf6)",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontSize: "1.05rem",
-    fontWeight: "bold",
-    marginTop: "1rem",
-    boxShadow: "0 4px 14px 0 rgba(139, 92, 246, 0.39)",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-  },
-  btnSubmitHover: {
-    transform: "translateY(-2px)",
-    boxShadow: "0 6px 20px 0 rgba(139, 92, 246, 0.5)",
-  },
-  error: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    color: "#ef4444",
-    border: "1px solid rgba(239, 68, 68, 0.2)",
-    padding: "0.8rem 1rem",
-    borderRadius: "10px",
-    marginBottom: "1.5rem",
-    fontSize: "0.9rem",
-    textAlign: "center",
-    fontWeight: "500",
-  },
 }
 
 export default LoginPage
