@@ -132,8 +132,8 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 
 
 def require_instructor(current_user: User = Depends(get_current_user)) -> User:
-    """Dependency untuk endpoint yang hanya bisa diakses dosen/instructor."""
-    if current_user.role not in [UserRole.ADMIN, UserRole.DOSEN]:
+    """Dependency untuk endpoint yang hanya bisa diakses dosen (bukan admin)."""
+    if current_user.role != UserRole.DOSEN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Hanya dosen yang dapat mengakses resource ini",
