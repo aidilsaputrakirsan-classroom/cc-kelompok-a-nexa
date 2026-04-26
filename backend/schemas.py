@@ -8,7 +8,7 @@ from enum import Enum
 EMAIL_REGEX = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
 
 
-from models import UserRole
+from models import UserRole, MaterialType
 
 # === BASE SCHEMA ===
 class ItemBase(BaseModel):
@@ -263,4 +263,55 @@ class UserWithClassesResponse(UserResponse):
     """Schema untuk response user dengan list classes."""
     classes: list[ClassResponse] = Field(default=[], description="Daftar class yang diikuti pengguna")
 
+
+# ==================== MATERIAL SCHEMAS ====================
+
+class MaterialBase(BaseModel):
+    """Base schema untuk Material."""
+    title: str = Field(..., min_length=1, max_length=255, examples=["Cloud Architecture Basics"], description="Judul materi")
+    description: Optional[str] = Field(None, examples=["Pengenalan arsitektur cloud dan komponen-komponennya"], description="Deskripsi detail materi")
+    material_type: MaterialType = Field(..., examples=["pdf"], description="Tipe materi: pdf, ppt, video, link")
+    is_published: bool = Field(default=True, examples=[True], description="Apakah materi visible untuk mahasiswa")
+
+
+class MaterialCreate(MaterialBase):
+    """Schema untuk membuat material baru."""
+    external_link: Optional[str] = Field(None, examples=["https://example.com/video"], description="Link eksternal (untuk tipe 'link')")
+
+    @field_validator("external_link")
+    @classmethod
+    def validate_external_link(cls, value: str, info) -> Optional[str]:
+        """Validasi bahwa external_link harus ada jika material_type adalah 'link'."""
+        if info.data.get("material_type") == MaterialType.LINK and not value:
+            raise ValueError("External link harus disediakan untuk material tipe 'link'")
+        return value
+
+
+class MaterialResponse(MaterialBase):
+    """Schema untuk response material."""
+    id: int = Field(..., examples=[1], description="ID material unik")
+    class_id: int = Field(..., examples=[1], description="ID class yang memiliki materi")
+    file_path: Optional[str] = Field(None, examples=["/uploads/classes/1/materials/file.pdf"], description="Path file yang di-upload")
+    file_size: Optional[int] = Field(None, examples=[2048576], description="Ukuran file dalam bytes")
+    external_link: Optional[str] = Field(None, examples=["https://example.com/video"], description="Link eksternal")
+    uploaded_by: int = Field(..., examples=[1], description="ID dosen yang upload materi")
+    created_at: datetime = Field(..., examples=["2024-04-19T10:30:00+00:00"], description="Waktu pembuatan materi")
+    updated_at: Optional[datetime] = Field(None, examples=["2024-04-19T15:45:00+00:00"], description="Waktu update terakhir")
+
+    class Config:
+        from_attributes = True
+
+
+class MaterialListResponse(BaseModel):
+    """Schema untuk response list materials."""
+    total: int = Field(..., examples=[10], description="Total jumlah material di class")
+    materials: list[MaterialResponse] = Field(..., description="Daftar material")
+
+
+class MaterialUpdate(BaseModel):
+    """Schema untuk update material."""
+    title: Optional[str] = Field(None, min_length=1, max_length=255, examples=["Updated Title"])
+    description: Optional[str] = Field(None, examples=["Updated description"])
+    is_published: Optional[bool] = Field(None, examples=[True])
+    external_link: Optional[str] = Field(None, examples=["https://example.com/video"])
 

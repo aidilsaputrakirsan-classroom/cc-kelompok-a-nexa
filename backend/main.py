@@ -13,6 +13,7 @@ from schemas import (
     UserProfileUpdate, UserWithClassesResponse,
     PasswordResetRequest, PasswordResetVerify, PasswordResetResponse,
     ClassCreate, ClassResponse, ClassListResponse,
+    MaterialCreate, MaterialResponse, MaterialListResponse, MaterialUpdate,
 )
 from auth import (
     create_access_token, get_current_user, require_admin, require_instructor,
@@ -402,6 +403,113 @@ def unarchive_class(
     unarchived_class = crud.unarchive_class(db=db, class_id=class_id)
     return unarchived_class
 
+
+# ==================== MATERIAL MANAGEMENT ====================
+
+@app.post("/classes/{class_id}/materials", response_model=MaterialResponse, status_code=201)
+def upload_material(
+    class_id: int,
+    material_data: MaterialCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Upload materi pembelajaran ke class. Hanya dosen yang bisa."""
+    # Verify class exists
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Enforce ownership: Dosen only uploads to their own classes
+    if db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa upload materi ke kelas Anda sendiri")
+    
+    # Convert schema to dict (exclude_unset to handle file_path/external_link properly)
+    material_dict = material_data.model_dump(exclude_unset=True)
+    
+    db_material = crud.create_material(
+        db=db,
+        class_id=class_id,
+        uploaded_by=current_user.id,
+        material_data=material_dict,
+    )
+    return db_material
+
+
+@app.get("/classes/{class_id}/materials", response_model=MaterialListResponse)
+def list_materials(
+    class_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil daftar materi untuk sebuah class."""
+    # Verify class exists
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    result = crud.get_materials(db=db, class_id=class_id, skip=skip, limit=limit)
+    return result
+
+
+@app.get("/classes/{class_id}/materials/{material_id}", response_model=MaterialResponse)
+def get_material(
+    class_id: int,
+    material_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil detail materi."""
+    db_material = crud.get_material(db=db, material_id=material_id)
+    if not db_material or db_material.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Material tidak ditemukan")
+    
+    return db_material
+
+
+@app.put("/classes/{class_id}/materials/{material_id}", response_model=MaterialResponse)
+def update_material(
+    class_id: int,
+    material_id: int,
+    material_data: MaterialUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Update materi. Hanya dosen yang upload yang bisa."""
+    db_material = crud.get_material(db=db, material_id=material_id)
+    if not db_material or db_material.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Material tidak ditemukan")
+    
+    # Enforce ownership: Dosen only updates materials they uploaded
+    if db_material.uploaded_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa mengubah materi yang Anda upload")
+    
+    material_dict = material_data.model_dump(exclude_unset=True)
+    updated_material = crud.update_material(db=db, material_id=material_id, material_data=material_dict)
+    
+    return updated_material
+
+
+@app.delete("/classes/{class_id}/materials/{material_id}", status_code=204)
+def delete_material(
+    class_id: int,
+    material_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Hapus materi. Hanya dosen yang upload yang bisa."""
+    db_material = crud.get_material(db=db, material_id=material_id)
+    if not db_material or db_material.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Material tidak ditemukan")
+    
+    # Enforce ownership: Dosen only deletes materials they uploaded
+    if db_material.uploaded_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa menghapus materi yang Anda upload")
+    
+    success = crud.delete_material(db=db, material_id=material_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Gagal menghapus material")
 
 
 @app.post("/items", response_model=ItemResponse, status_code=201)
