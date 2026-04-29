@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from database import engine, get_db
 from models import Base, User, UserRole
@@ -49,8 +51,24 @@ app.add_middleware(
 # ==================== HEALTH CHECK ====================
 
 @app.get("/health")
-def health_check():
-    return {"status": "healthy", "version": "0.4.0"}
+def health_check(db: Session = Depends(get_db)):
+    """Health check endpoint — cek status semua komponen."""
+    health = {
+        "status": "healthy",
+        "service": "backend",
+        "version": "1.0.0",
+    }
+    
+    # Cek database connection
+    try:
+        db.execute(text("SELECT 1"))
+        health["database"] = "connected"
+    except Exception as e:
+        health["status"] = "unhealthy"
+        health["database"] = f"error: {str(e)}"
+    
+    status_code = 200 if health["status"] == "healthy" else 503
+    return JSONResponse(content=health, status_code=status_code)
 
 
 # ==================== AUTH ENDPOINTS (PUBLIC) ====================
