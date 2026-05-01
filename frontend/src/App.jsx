@@ -175,11 +175,12 @@ function App() {
               />
             ) : (
               <>
-                {user?.role === 'admin' && (
+                {user?.role === 'dosen' && (
                   <ClassForm
                     onSubmit={handleClassSubmit}
                     editingClass={editingClass}
                     onCancelEdit={() => setEditingClass(null)}
+                    currentUser={user}
                   />
                 )}
                 <ClassList

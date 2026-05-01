@@ -50,7 +50,7 @@ function Header({ isConnected, user, onLogout, onOpenProfile, activeTab, onTabCh
             <span>Courses</span>
           </button>
 
-          {user.role === 'admin' && (
+          {(user.role === 'dosen' || user.role === 'admin') && (
             <button
               onClick={() => onTabChange('archives')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ease-in-out font-bold ${

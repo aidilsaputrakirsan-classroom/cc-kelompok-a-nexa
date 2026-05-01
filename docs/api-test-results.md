@@ -2,7 +2,7 @@
 
 **POST/Items**
 
-![Contoh Gambar](post.jpeg)
+![Contoh Gambar](api_tes/post.jpeg)
 
 Gambar diatas menunjukan hasil penambahan items, yaitu
 - name items : "Laptop"
@@ -14,7 +14,7 @@ Gambar diatas menunjukan hasil penambahan items, yaitu
 
 **GET/Items**
 
-![Contoh Gambar](get.jpeg)
+![Contoh Gambar](api_tes/get.jpeg)
 
 Gambar diatas menunjukan Pengambilan data dilakukan terhadap item yang telah diinputkan. Tampilan tersebut menunjukkan bahwa item-item yang telah didaftarkan berhasil tersimpan di dalam database, dan data tersebut akan ditampilkan saat query `GET` dijalankan.
 
@@ -22,7 +22,7 @@ Gambar diatas menunjukan Pengambilan data dilakukan terhadap item yang telah dii
 
 **GET/Items/4 - item laptop**
 
-![Contoh Gambar](get4.jpeg)
+![Contoh Gambar](api_tes/get4.jpeg)
 
 Endpoint GET /items/4 digunakan untuk menampilkan data item berdasarkan ID tertentu. Pada tampilan di atas, sistem menjalankan perintah untuk mengambil data item dengan ID ‘4’, sehingga data yang ditampilkan adalah laptop yang memiliki ID tersebut dari database.
 
@@ -30,14 +30,14 @@ Endpoint GET /items/4 digunakan untuk menampilkan data item berdasarkan ID terte
 
 **PUT/Items/4 - Update harga laptop**
 
-![Contoh Gambar](put.jpeg)
+![Contoh Gambar](api_tes/put.jpeg)
 Gambar diatas menunjukan proses untuk memperbarui data item.  Data yang diperbarui yaitu harga laptop yang awalnya '15000000' menjadi '14000000'
 
 ---
 
 **GET/Items/4 - update harga laptop**
 
-![Contoh Gambar](getnewprice.jpeg)
+![Contoh Gambar](api_tes/getnewprice.jpeg)
 
 Gambar diatas menunjukan, database berhasil menyimpan hasil update harga laptop menjadi '14000000' 
 
@@ -45,7 +45,7 @@ Gambar diatas menunjukan, database berhasil menyimpan hasil update harga laptop 
 
 **GET/Items/Search=laptop**
 
-![Contoh Gambar](srchitem.jpeg)
+![Contoh Gambar](api_tes/srchitem.jpeg)
 
 Gambar diatas menunjukan proses yang dilakukan untuk menampilkan data harga laptop yang telah diupdate.
 
@@ -53,7 +53,7 @@ Gambar diatas menunjukan proses yang dilakukan untuk menampilkan data harga lapt
 
 **DELET/Items/4**
 
-![Contoh Gambar](dltitem.jpeg)
+![Contoh Gambar](api_tes/dltitem.jpeg)
 
 Gambar diatas menunjukan proses penghapusan items laptop dengan id '4' dengan pernitah 'DELET'
 
@@ -61,6 +61,6 @@ Gambar diatas menunjukan proses penghapusan items laptop dengan id '4' dengan pe
 
 **GET/items/4 - Response 404**
 
-![Contoh Gambar](404.jpeg)
+![Contoh Gambar](api_tes/404.jpeg)
 
 Gambar diatas menunjukan kode status '404' yang menandakan bahwa data item yang telah dihapus sudah tidak ada lagi didalam database.

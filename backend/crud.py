@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from datetime import datetime
-from models import Item, User, Class, user_class_association, UserRole
+from models import Item, User, Class, user_class_association, UserRole, Material
 from schemas import ItemCreate, ItemUpdate, UserCreate, UserProfileUpdate
 from auth import hash_password, verify_password, create_password_reset_token_record, verify_password_reset_token, clear_password_reset_token
 
@@ -358,4 +358,78 @@ def get_classes_with_archive(db: Session, skip: int = 0, limit: int = 20, includ
     
     return {"total": total, "classes": classes}
 
+
+# ==================== MATERIAL CRUD ====================
+
+def create_material(db: Session, class_id: int, uploaded_by: int, material_data: dict) -> Material:
+    """Buat material baru untuk sebuah class."""
+    db_material = Material(
+        class_id=class_id,
+        uploaded_by=uploaded_by,
+        **material_data
+    )
+    db.add(db_material)
+    db.commit()
+    db.refresh(db_material)
+    return db_material
+
+
+def get_materials(db: Session, class_id: int, skip: int = 0, limit: int = 20, published_only: bool = True) -> dict:
+    """Ambil daftar material untuk sebuah class."""
+    query = db.query(Material).filter(Material.class_id == class_id)
+    
+    if published_only:
+        query = query.filter(Material.is_published == True)
+    
+    total = query.count()
+    materials = query.order_by(Material.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return {"total": total, "materials": materials}
+
+
+def get_material(db: Session, material_id: int) -> Material | None:
+    """Ambil satu material berdasarkan ID."""
+    return db.query(Material).filter(Material.id == material_id).first()
+
+
+def update_material(db: Session, material_id: int, material_data: dict) -> Material | None:
+    """Update material berdasarkan ID."""
+    db_material = db.query(Material).filter(Material.id == material_id).first()
+    
+    if not db_material:
+        return None
+    
+    # Update hanya field yang disediakan (exclude_unset)
+    for field, value in material_data.items():
+        if value is not None:
+            setattr(db_material, field, value)
+    
+    db.commit()
+    db.refresh(db_material)
+    return db_material
+
+
+def delete_material(db: Session, material_id: int) -> bool:
+    """Hapus material berdasarkan ID. Return True jika berhasil."""
+    db_material = db.query(Material).filter(Material.id == material_id).first()
+    
+    if not db_material:
+        return False
+    
+    db.delete(db_material)
+    db.commit()
+    return True
+
+
+def get_materials_by_type(db: Session, class_id: int, material_type: str, published_only: bool = True) -> list[Material]:
+    """Ambil material untuk class berdasarkan tipe."""
+    query = db.query(Material).filter(
+        Material.class_id == class_id,
+        Material.material_type == material_type
+    )
+    
+    if published_only:
+        query = query.filter(Material.is_published == True)
+    
+    return query.order_by(Material.created_at.desc()).all()
 

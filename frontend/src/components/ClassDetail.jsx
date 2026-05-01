@@ -27,13 +27,17 @@ function ClassDetail({ classItem, onBack, currentUser }) {
       const allUsers = await fetchUsers("mahasiswa")
       setAvailableStudents(allUsers)
     } catch (err) {
-      console.error("Gagal memuat daftar semua siswa:", err)
+      console.error("Gagal memuat daftar semua mahasiswa:", err)
     }
   }
 
   useEffect(() => {
     loadStudents()
-    loadAvailableStudents()
+    // Only dosen who owns the class can manage students, so only fetch available students for them
+    // (GET /users requires require_instructor — dosen only)
+    if (currentUser.role === 'dosen' && classItem.instructor_id === currentUser.id) {
+      loadAvailableStudents()
+    }
   }, [classItem.id])
 
   const handleAddStudent = async (e) => {
@@ -60,7 +64,8 @@ function ClassDetail({ classItem, onBack, currentUser }) {
     }
   }
 
-  const canManage = currentUser.role === 'admin' || (currentUser.role === 'dosen' && classItem.instructor_id === currentUser.id)
+  // Only the dosen who owns this class can manage students (backend enforces require_instructor + ownership check)
+  const canManage = currentUser.role === 'dosen' && classItem.instructor_id === currentUser.id
   const unassignedStudents = availableStudents.filter(as => !students.some(s => s.id === as.id))
 
   const avatarColors = ['from-indigo-500 to-purple-600', 'from-blue-500 to-cyan-600', 'from-violet-500 to-pink-600', 'from-emerald-500 to-teal-600']

@@ -12,6 +12,14 @@ class UserRole(str, PyEnum):
     MAHASISWA = "mahasiswa"
 
 
+class MaterialType(str, PyEnum):
+    """Tipe material yang dapat di-upload."""
+    PDF = "pdf"
+    PPT = "ppt"
+    VIDEO = "video"
+    LINK = "link"
+
+
 # Association table untuk many-to-many relationship User-Class
 user_class_association = Table(
     'user_class_association',
@@ -109,3 +117,43 @@ class Class(Base):
 
     def __repr__(self):
         return f"<Class(id={self.id}, code='{self.code}', name='{self.name}')>"
+
+
+class Material(Base):
+    """Model untuk tabel 'materials' — materi pembelajaran yang di-upload oleh dosen."""
+    __tablename__ = "materials"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    class_id = Column(Integer, ForeignKey('classes.id'), nullable=False)  # Kelas yang memiliki materi
+    title = Column(String(255), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    material_type = Column(Enum(MaterialType), nullable=False)  # PDF, PPT, VIDEO, LINK
+    
+    # File path untuk uploaded files (PDF, PPT, Video)
+    file_path = Column(String(512), nullable=True)  # e.g., "/uploads/classes/1/materials/file.pdf"
+    file_size = Column(Integer, nullable=True)  # Ukuran file dalam bytes
+    
+    # External link untuk link eksternal
+    external_link = Column(String(512), nullable=True)  # e.g., "https://example.com/video"
+    
+    # Metadata
+    uploaded_by = Column(Integer, ForeignKey('users.id'), nullable=False)  # Dosen yang upload
+    is_published = Column(Boolean, default=True)  # Apakah materi visible untuk students
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    class_rel = relationship(
+        "Class",
+        foreign_keys=[class_id],
+        viewonly=True,
+    )
+    uploader = relationship(
+        "User",
+        foreign_keys=[uploaded_by],
+        viewonly=True,
+    )
+
+    def __repr__(self):
+        return f"<Material(id={self.id}, title='{self.title}', type={self.material_type})>"

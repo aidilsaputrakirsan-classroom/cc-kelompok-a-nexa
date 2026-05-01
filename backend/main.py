@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from database import engine, get_db
 from models import Base, User, UserRole
@@ -13,6 +15,7 @@ from schemas import (
     UserProfileUpdate, UserWithClassesResponse,
     PasswordResetRequest, PasswordResetVerify, PasswordResetResponse,
     ClassCreate, ClassResponse, ClassListResponse,
+    MaterialCreate, MaterialResponse, MaterialListResponse, MaterialUpdate,
 )
 from auth import (
     create_access_token, get_current_user, require_admin, require_instructor,
@@ -48,8 +51,24 @@ app.add_middleware(
 # ==================== HEALTH CHECK ====================
 
 @app.get("/health")
-def health_check():
-    return {"status": "healthy", "version": "0.4.0"}
+def health_check(db: Session = Depends(get_db)):
+    """Health check endpoint — cek status semua komponen."""
+    health = {
+        "status": "healthy",
+        "service": "backend",
+        "version": "1.0.0",
+    }
+    
+    # Cek database connection
+    try:
+        db.execute(text("SELECT 1"))
+        health["database"] = "connected"
+    except Exception as e:
+        health["status"] = "unhealthy"
+        health["database"] = f"error: {str(e)}"
+    
+    status_code = 200 if health["status"] == "healthy" else 503
+    return JSONResponse(content=health, status_code=status_code)
 
 
 # ==================== AUTH ENDPOINTS (PUBLIC) ====================
@@ -175,9 +194,9 @@ def update_user_profile(
 def create_class(
     class_data: ClassCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),  # Only admin can create classes
+    current_user: User = Depends(require_instructor),  # Only dosen/instructor can create classes
 ):
-    """Buat class baru. Hanya admin yang bisa."""
+    """Buat class baru. Hanya dosen yang bisa."""
     class_dict = class_data.model_dump()
     db_class = crud.create_class(db=db, class_data=class_dict)
     return db_class
@@ -238,16 +257,22 @@ def update_class(
     class_id: int,
     class_data: ClassCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_instructor),
 ):
-    """Update class. Hanya admin yang bisa."""
+    """Update class. Hanya dosen yang bisa."""
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Enforce ownership: Dosen only manages their own classes
+    if db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa mengubah kelas Anda sendiri")
+    
     updated_class = crud.update_class(
         db=db,
         class_id=class_id,
         class_data=class_data.model_dump(exclude_unset=True),
     )
-    if not updated_class:
-        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
     return updated_class
 
 
@@ -255,9 +280,17 @@ def update_class(
 def delete_class(
     class_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_instructor),
 ):
-    """Hapus class. Hanya admin yang bisa."""
+    """Hapus class. Hanya dosen yang bisa."""
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Enforce ownership: Dosen only manages their own classes
+    if db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa menghapus kelas Anda sendiri")
+    
     success = crud.delete_class(db=db, class_id=class_id)
     if not success:
         raise HTTPException(status_code=404, detail="Class tidak ditemukan")
@@ -270,13 +303,13 @@ def add_student_to_class(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_instructor),
 ):
-    """Tambah student ke class. Hanya dosen/admin yang bisa."""
+    """Tambah student ke class. Hanya dosen yang bisa."""
     db_class = crud.get_class(db=db, class_id=class_id)
     if not db_class:
         raise HTTPException(status_code=404, detail="Class tidak ditemukan")
         
     # Enforce ownership: Dosen only manages students in their own classes
-    if current_user.role == UserRole.DOSEN and db_class.instructor_id != current_user.id:
+    if db_class.instructor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Anda hanya bisa menambah siswa ke kelas Anda sendiri")
 
     success = crud.add_student_to_class(db=db, class_id=class_id, user_id=user_id)
@@ -295,13 +328,13 @@ def remove_student_from_class(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_instructor),
 ):
-    """Hapus student dari class. Hanya dosen/admin yang bisa."""
+    """Hapus student dari class. Hanya dosen yang bisa."""
     db_class = crud.get_class(db=db, class_id=class_id)
     if not db_class:
         raise HTTPException(status_code=404, detail="Class tidak ditemukan")
         
     # Enforce ownership: Dosen only manages students in their own classes
-    if current_user.role == UserRole.DOSEN and db_class.instructor_id != current_user.id:
+    if db_class.instructor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Anda hanya bisa mengeluarkan siswa dari kelas Anda sendiri")
 
     success = crud.remove_student_from_class(db=db, class_id=class_id, user_id=user_id)
@@ -349,12 +382,16 @@ def get_class_students(
 def archive_class(
     class_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_instructor),
 ):
-    """Archive class (soft delete). Hanya admin yang bisa."""
+    """Archive class (soft delete). Hanya dosen yang bisa."""
     db_class = crud.get_class(db=db, class_id=class_id)
     if not db_class:
         raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Enforce ownership: Dosen only manages their own classes
+    if db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa mengarsip kelas Anda sendiri")
     
     if db_class.is_archived:
         raise HTTPException(status_code=400, detail="Class sudah diarsip")
@@ -367,12 +404,16 @@ def archive_class(
 def unarchive_class(
     class_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_instructor),
 ):
-    """Unarchive class. Hanya admin yang bisa."""
+    """Unarchive class. Hanya dosen yang bisa."""
     db_class = crud.get_class(db=db, class_id=class_id)
     if not db_class:
         raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Enforce ownership: Dosen only manages their own classes
+    if db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa membuka arsip kelas Anda sendiri")
     
     if not db_class.is_archived:
         raise HTTPException(status_code=400, detail="Class tidak dalam status arsip")
@@ -380,6 +421,113 @@ def unarchive_class(
     unarchived_class = crud.unarchive_class(db=db, class_id=class_id)
     return unarchived_class
 
+
+# ==================== MATERIAL MANAGEMENT ====================
+
+@app.post("/classes/{class_id}/materials", response_model=MaterialResponse, status_code=201)
+def upload_material(
+    class_id: int,
+    material_data: MaterialCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Upload materi pembelajaran ke class. Hanya dosen yang bisa."""
+    # Verify class exists
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Enforce ownership: Dosen only uploads to their own classes
+    if db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa upload materi ke kelas Anda sendiri")
+    
+    # Convert schema to dict (exclude_unset to handle file_path/external_link properly)
+    material_dict = material_data.model_dump(exclude_unset=True)
+    
+    db_material = crud.create_material(
+        db=db,
+        class_id=class_id,
+        uploaded_by=current_user.id,
+        material_data=material_dict,
+    )
+    return db_material
+
+
+@app.get("/classes/{class_id}/materials", response_model=MaterialListResponse)
+def list_materials(
+    class_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil daftar materi untuk sebuah class."""
+    # Verify class exists
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    result = crud.get_materials(db=db, class_id=class_id, skip=skip, limit=limit)
+    return result
+
+
+@app.get("/classes/{class_id}/materials/{material_id}", response_model=MaterialResponse)
+def get_material(
+    class_id: int,
+    material_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil detail materi."""
+    db_material = crud.get_material(db=db, material_id=material_id)
+    if not db_material or db_material.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Material tidak ditemukan")
+    
+    return db_material
+
+
+@app.put("/classes/{class_id}/materials/{material_id}", response_model=MaterialResponse)
+def update_material(
+    class_id: int,
+    material_id: int,
+    material_data: MaterialUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Update materi. Hanya dosen yang upload yang bisa."""
+    db_material = crud.get_material(db=db, material_id=material_id)
+    if not db_material or db_material.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Material tidak ditemukan")
+    
+    # Enforce ownership: Dosen only updates materials they uploaded
+    if db_material.uploaded_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa mengubah materi yang Anda upload")
+    
+    material_dict = material_data.model_dump(exclude_unset=True)
+    updated_material = crud.update_material(db=db, material_id=material_id, material_data=material_dict)
+    
+    return updated_material
+
+
+@app.delete("/classes/{class_id}/materials/{material_id}", status_code=204)
+def delete_material(
+    class_id: int,
+    material_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Hapus materi. Hanya dosen yang upload yang bisa."""
+    db_material = crud.get_material(db=db, material_id=material_id)
+    if not db_material or db_material.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Material tidak ditemukan")
+    
+    # Enforce ownership: Dosen only deletes materials they uploaded
+    if db_material.uploaded_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa menghapus materi yang Anda upload")
+    
+    success = crud.delete_material(db=db, material_id=material_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Gagal menghapus material")
 
 
 @app.post("/items", response_model=ItemResponse, status_code=201)

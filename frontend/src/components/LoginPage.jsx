@@ -204,8 +204,7 @@ function LoginPage({ onLogin, onRegister }) {
       {/* Illustrative Texture/Image */}
       <div className="hidden lg:block fixed top-0 right-0 w-1/3 h-full -z-20">
         <div className="w-full h-full opacity-20 bg-gradient-to-br from-primary/30 to-tertiary/20"></div>
-        <img 
-          src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1000" 
+        <img  
           alt="Modern minimalist university architecture" 
           className="absolute inset-0 w-full h-full object-cover mix-blend-overlay grayscale opacity-40"
         />

@@ -24,7 +24,7 @@ const ClassList = ({
     );
   }
 
-  const isAdmin = currentUser?.role === 'admin';
+  const isDosen = currentUser?.role === 'dosen';
 
   return (
     <div className="mt-2">
@@ -41,7 +41,7 @@ const ClassList = ({
             min="1"
           />
         </div>
-        {isAdmin && (
+        {currentUser?.role === 'admin' && (
           <div className="flex items-center gap-3">
             <label className="text-sm font-semibold text-on-surface-variant whitespace-nowrap">ID Guru:</label>
             <input 
@@ -94,8 +94,8 @@ const ClassList = ({
                   <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-bold text-primary uppercase tracking-tight shadow-sm">
                     Sem. {cls.semester}
                   </div>
-                  {/* Admin Action Buttons */}
-                  {isAdmin && (
+                  {/* Dosen Action Buttons — only for class owner */}
+                  {isDosen && cls.instructor_id === currentUser?.id && (
                     <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       {!isArchivePage && (
                         <button 

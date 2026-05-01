@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 
-function ClassForm({ onSubmit, editingClass, onCancelEdit }) {
+function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
   const [formData, setFormData] = useState({
     name: "", code: "", description: "",
     semester: "1", academic_year: "2024/2025",
@@ -37,10 +37,12 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit }) {
       })
       setIsOpen(true)
     } else {
-      setFormData({ name: "", code: "", description: "", semester: "1", academic_year: "2024/2025", max_students: "", instructor_id: "" })
+      // For dosen: auto-inject their own ID as instructor
+      const autoInstructorId = currentUser?.role === 'dosen' ? String(currentUser.id) : ""
+      setFormData({ name: "", code: "", description: "", semester: "1", academic_year: "2024/2025", max_students: "", instructor_id: autoInstructorId })
     }
     setError("")
-  }, [editingClass])
+  }, [editingClass, currentUser])
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -49,7 +51,9 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
-    if (!formData.name || !formData.code || !formData.academic_year || !formData.instructor_id) {
+    // For dosen, always force their own ID as instructor
+    const effectiveInstructorId = currentUser?.role === 'dosen' ? String(currentUser.id) : formData.instructor_id
+    if (!formData.name || !formData.code || !formData.academic_year || !effectiveInstructorId) {
       setError("Harap isi semua field wajib (*)")
       return
     }
@@ -60,11 +64,12 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit }) {
       semester: parseInt(formData.semester),
       academic_year: formData.academic_year.trim(),
       max_students: formData.max_students ? parseInt(formData.max_students) : null,
-      instructor_id: parseInt(formData.instructor_id)
+      instructor_id: parseInt(effectiveInstructorId)
     }
     try {
       await onSubmit(classData, editingClass?.id)
-      setFormData({ name: "", code: "", description: "", semester: "1", academic_year: "2024/2025", max_students: "", instructor_id: "" })
+      const autoInstructorId = currentUser?.role === 'dosen' ? String(currentUser.id) : ""
+      setFormData({ name: "", code: "", description: "", semester: "1", academic_year: "2024/2025", max_students: "", instructor_id: autoInstructorId })
       setIsOpen(false)
     } catch (err) {
       setError(err.message)
@@ -142,28 +147,40 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit }) {
               </div>
             </div>
 
-            {/* Row 3: Description + Instructor */}
+            {/* Row 3: Description + Instructor (admin only) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-on-surface-variant ml-1">Deskripsi</label>
                 <input type="text" name="description" value={formData.description} onChange={handleChange} placeholder="Opsional" className={inputClass} />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1">Guru Pengajar *</label>
-                <select 
-                  name="instructor_id" 
-                  value={formData.instructor_id} 
-                  onChange={handleChange} 
-                  className={`${inputClass} cursor-pointer`}
-                >
-                  <option value="">Pilih Guru...</option>
-                  {instructors.map(guru => (
-                    <option key={guru.id} value={guru.id}>
-                      {guru.name} ({guru.role})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Only show instructor selector for admin; for dosen it is automatically set to themselves */}
+              {currentUser?.role !== 'dosen' ? (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-on-surface-variant ml-1">Guru Pengajar *</label>
+                  <select 
+                    name="instructor_id" 
+                    value={formData.instructor_id} 
+                    onChange={handleChange} 
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="">Pilih Guru...</option>
+                    {instructors.map(guru => (
+                      <option key={guru.id} value={guru.id}>
+                        {guru.name} ({guru.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-on-surface-variant ml-1">Guru Pengajar</label>
+                  <div className="flex items-center gap-3 px-4 py-3 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm text-on-surface-variant">
+                    <span className="material-symbols-outlined text-base text-primary">person</span>
+                    <span className="font-semibold text-on-surface">{currentUser?.name}</span>
+                    <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Anda (Dosen)</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
@@ -187,7 +204,11 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit }) {
               ) : (
                 <button 
                   type="button" 
-                  onClick={() => { setIsOpen(false); setFormData({ name: "", code: "", description: "", semester: "1", academic_year: "2024/2025", max_students: "", instructor_id: "" }); }}
+                  onClick={() => {
+                    setIsOpen(false)
+                    const autoInstructorId = currentUser?.role === 'dosen' ? String(currentUser.id) : ""
+                    setFormData({ name: "", code: "", description: "", semester: "1", academic_year: "2024/2025", max_students: "", instructor_id: autoInstructorId })
+                  }}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors"
                 >
                   <span className="material-symbols-outlined text-base">close</span>
