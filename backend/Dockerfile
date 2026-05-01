@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # 4. Install dependencies backend
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --nod-cache-dir -r requirements.txt
 
 # 5. Copy seluruh sisa kode aplikasi ke dalam container
 COPY . .

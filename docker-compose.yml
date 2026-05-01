@@ -34,7 +34,9 @@ services:
 
   # ==================== BACKEND ====================
   backend:
-    image: dzaky975/cc-kelompok-a-nexa-backend:1.0
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: cloudapp-backend
     restart: unless-stopped
     env_file:
