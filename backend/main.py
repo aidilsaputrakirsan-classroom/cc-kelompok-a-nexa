@@ -544,10 +544,11 @@ def list_items(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     search: str = Query(None),
+    category: str = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return crud.get_items(db=db, skip=skip, limit=limit, search=search)
+    return crud.get_items(db=db, skip=skip, limit=limit, search=search, category=category)
 
 
 @app.get("/items/stats", response_model=ItemStatsResponse)
