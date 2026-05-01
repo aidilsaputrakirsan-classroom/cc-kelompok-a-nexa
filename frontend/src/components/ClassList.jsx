@@ -18,7 +18,7 @@ const ClassList = ({
       <div className="flex items-center justify-center py-24">
         <div className="flex flex-col items-center gap-4">
           <span className="material-symbols-outlined text-5xl text-primary animate-spin">progress_activity</span>
-          <p className="text-on-surface-variant font-medium">Memuat kelas...</p>
+          <p className="text-on-surface-variant dark:text-slate-400 font-medium">Memuat kelas...</p>
         </div>
       </div>
     );
@@ -29,34 +29,34 @@ const ClassList = ({
   return (
     <div className="mt-2">
       {/* Filter Bar */}
-      <div className="flex flex-wrap gap-4 bg-surface-container-lowest p-4 rounded-xl mb-6 border border-outline-variant/5 shadow-sm items-center">
+      <div className="flex flex-wrap gap-4 bg-surface-container-lowest dark:bg-[#1a1928] p-4 rounded-xl mb-6 border border-outline-variant/5 dark:border-white/5 shadow-sm items-center">
         <div className="flex items-center gap-3">
-          <label className="text-sm font-semibold text-on-surface-variant whitespace-nowrap">Semester:</label>
+          <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 whitespace-nowrap">Semester:</label>
           <input 
             type="number" 
             placeholder="Filter semester..."
             value={filters?.semester || ""} 
             onChange={(e) => onFilterChange({ ...filters, semester: e.target.value })}
-            className="w-32 px-3 py-2 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            className="w-32 px-3 py-2 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl text-sm text-on-surface dark:text-slate-200 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400"
             min="1"
           />
         </div>
         {currentUser?.role === 'admin' && (
           <div className="flex items-center gap-3">
-            <label className="text-sm font-semibold text-on-surface-variant whitespace-nowrap">ID Guru:</label>
+            <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 whitespace-nowrap">ID Guru:</label>
             <input 
               type="number" 
               placeholder="Filter ID guru..." 
               value={filters?.instructor_id || ""} 
               onChange={(e) => onFilterChange({ ...filters, instructor_id: e.target.value })}
-              className="w-36 px-3 py-2 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-36 px-3 py-2 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl text-sm text-on-surface dark:text-slate-200 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400"
             />
           </div>
         )}
         {(filters?.semester || filters?.instructor_id) && (
           <button 
             onClick={() => onFilterChange({ semester: "", instructor_id: "" })}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 transition-colors"
+            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
           >
             <span className="material-symbols-outlined text-base">close</span>
             Reset Filter
@@ -68,25 +68,25 @@ const ClassList = ({
       </div>
 
       {!classes || classes.length === 0 ? (
-        <div className="bg-surface-container-lowest p-16 rounded-xl border-2 border-dashed border-outline-variant/20 flex flex-col items-center justify-center text-center">
-          <span className="material-symbols-outlined text-6xl text-on-surface-variant/30 mb-4">inbox</span>
-          <p className="text-on-surface font-bold text-xl mb-2">Tidak ada kelas ditemukan</p>
-          <p className="text-on-surface-variant text-sm">Coba ubah filter atau tambahkan kelas baru.</p>
+        <div className="bg-surface-container-lowest dark:bg-[#1a1928] p-16 rounded-xl border-2 border-dashed border-outline-variant/20 dark:border-white/10 flex flex-col items-center justify-center text-center">
+          <span className="material-symbols-outlined text-6xl text-on-surface-variant/30 dark:text-slate-600 mb-4">inbox</span>
+          <p className="text-on-surface dark:text-slate-200 font-bold text-xl mb-2">Tidak ada kelas ditemukan</p>
+          <p className="text-on-surface-variant dark:text-slate-500 text-sm">Coba ubah filter atau tambahkan kelas baru.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {classes.map((cls, idx) => {
             const colors = [
-              { banner: 'from-indigo-500 to-purple-600', badge: 'bg-indigo-50 text-indigo-600' },
-              { banner: 'from-blue-500 to-cyan-600', badge: 'bg-blue-50 text-blue-600' },
-              { banner: 'from-violet-500 to-pink-600', badge: 'bg-violet-50 text-violet-600' },
-              { banner: 'from-emerald-500 to-teal-600', badge: 'bg-emerald-50 text-emerald-600' },
+              { banner: 'from-indigo-500 to-purple-600', badge: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' },
+              { banner: 'from-blue-500 to-cyan-600', badge: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+              { banner: 'from-violet-500 to-pink-600', badge: 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400' },
+              { banner: 'from-emerald-500 to-teal-600', badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
             ]
             const color = colors[idx % colors.length]
             return (
               <div 
                 key={cls.id} 
-                className="group bg-surface-container-lowest rounded-xl overflow-hidden border border-outline-variant/5 hover:shadow-xl transition-all duration-300 flex flex-col"
+                className="group bg-surface-container-lowest dark:bg-[#1a1928] rounded-xl overflow-hidden border border-outline-variant/5 dark:border-white/5 hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 flex flex-col"
               >
                 {/* Card Banner */}
                 <div className={`relative h-28 bg-gradient-to-br ${color.banner} flex items-center justify-center overflow-hidden`}>
@@ -137,13 +137,13 @@ const ClassList = ({
                 {/* Card Body */}
                 <div className="p-5 flex flex-col flex-1">
                   <span className={`inline-block ${color.badge} px-2 py-0.5 rounded text-[11px] font-bold mb-2 self-start`}>{cls.code}</span>
-                  <h4 className="text-base font-bold text-on-surface mb-1 leading-tight">{cls.name}</h4>
+                  <h4 className="text-base font-bold text-on-surface dark:text-white mb-1 leading-tight">{cls.name}</h4>
                   {cls.description && (
-                    <p className="text-on-surface-variant text-xs mb-3 line-clamp-2 flex-1">{cls.description}</p>
+                    <p className="text-on-surface-variant dark:text-slate-400 text-xs mb-3 line-clamp-2 flex-1">{cls.description}</p>
                   )}
                   
-                  <div className="mt-auto pt-3 border-t border-outline-variant/10">
-                    <div className="flex items-center justify-between text-xs text-on-surface-variant mb-3">
+                  <div className="mt-auto pt-3 border-t border-outline-variant/10 dark:border-white/5">
+                    <div className="flex items-center justify-between text-xs text-on-surface-variant dark:text-slate-400 mb-3">
                       <span className="flex items-center gap-1 font-medium">
                         <span className="material-symbols-outlined text-sm">calendar_month</span>
                         {cls.academic_year}

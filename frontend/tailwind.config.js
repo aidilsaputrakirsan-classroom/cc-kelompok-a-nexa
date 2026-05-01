@@ -8,6 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // ===== LIGHT MODE TOKENS =====
         "outline-variant": "#b3b0bc",
         "primary": "#4e4bd5",
         "secondary-fixed": "#d3e4fe",
@@ -58,7 +59,7 @@ export default {
         "secondary": "#506076",
         "surface-container-high": "#eae6f1",
         "on-error-container": "#6e0523",
-        "on-surface-variant": "#5f5e68"
+        "on-surface-variant": "#5f5e68",
       },
       borderRadius: {
         DEFAULT: "0.25rem",

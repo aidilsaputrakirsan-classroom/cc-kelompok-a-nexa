@@ -35,11 +35,11 @@ function LoginPage({ onLogin, onRegister }) {
   }
 
   return (
-    <div className="bg-surface text-on-surface min-h-screen flex flex-col">
+    <div className="bg-surface dark:bg-[#0f0e17] text-on-surface dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
       <main className="flex-grow flex items-center justify-center p-6 relative overflow-hidden">
         {/* Background Fluid Shapes */}
-        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-tertiary-container/20 rounded-full blur-[100px] -z-10"></div>
-        <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] bg-primary-container/10 rounded-full blur-[80px] -z-10"></div>
+        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-tertiary-container/20 dark:bg-indigo-900/20 rounded-full blur-[100px] -z-10"></div>
+        <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] bg-primary-container/10 dark:bg-purple-900/10 rounded-full blur-[80px] -z-10"></div>
         
         <div className="w-full max-w-[440px] z-10">
           {/* Brand Logo Center */}
@@ -47,15 +47,15 @@ function LoginPage({ onLogin, onRegister }) {
             <div className="w-14 h-14 primary-gradient rounded-xl flex items-center justify-center mb-4 tonal-elevation">
               <span className="material-symbols-outlined text-on-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-on-background tracking-tight">Studyfy</h1>
-            <p className="text-on-surface-variant font-medium mt-1">The Fluid Academy</p>
+            <h1 className="text-3xl font-extrabold text-on-background dark:text-white tracking-tight">Studyfy</h1>
+            <p className="text-on-surface-variant dark:text-slate-400 font-medium mt-1">The Fluid Academy</p>
           </div>
           
           {/* Login Card */}
-          <div className="bg-surface-container-lowest rounded-[2rem] p-8 md:p-10 tonal-elevation border border-outline-variant/10">
+          <div className="bg-surface-container-lowest dark:bg-[#1a1928] rounded-[2rem] p-8 md:p-10 tonal-elevation border border-outline-variant/10 dark:border-white/5">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-on-background mb-2">{isRegister ? "Create Account" : "Welcome Back"}</h2>
-              <p className="text-on-surface-variant text-sm">
+              <h2 className="text-2xl font-bold text-on-background dark:text-white mb-2">{isRegister ? "Create Account" : "Welcome Back"}</h2>
+              <p className="text-on-surface-variant dark:text-slate-400 text-sm">
                 {isRegister ? "Join Studyfy and start your learning journey." : "Please enter your details to sign in to your workspace."}
               </p>
             </div>
@@ -73,7 +73,7 @@ function LoginPage({ onLogin, onRegister }) {
                 <>
                   {/* Name Field */}
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-on-surface-variant ml-1" htmlFor="name">Full Name</label>
+                    <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1" htmlFor="name">Full Name</label>
                     <div className="relative group">
                       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">person</span>
                       <input 
@@ -83,33 +83,33 @@ function LoginPage({ onLogin, onRegister }) {
                         value={formData.name}
                         onChange={handleChange}
                         placeholder="John Doe" 
-                        className="w-full pl-12 pr-4 py-4 bg-surface-container-low border border-outline-variant/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface"
+                        className="w-full pl-12 pr-4 py-4 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface dark:text-slate-100"
                       />
                     </div>
                   </div>
 
                   {/* Role Selector */}
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-on-surface-variant ml-1">Register As</label>
+                    <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Register As</label>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, role: 'admin' }))}
-                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'admin' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-high'}`}
+                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'admin' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low dark:bg-white/5 border-outline-variant/20 dark:border-white/10 text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-high dark:hover:bg-white/10'}`}
                       >
                         Admin
                       </button>
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, role: 'dosen' }))}
-                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'dosen' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-high'}`}
+                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'dosen' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low dark:bg-white/5 border-outline-variant/20 dark:border-white/10 text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-high dark:hover:bg-white/10'}`}
                       >
                         Dosen
                       </button>
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, role: 'mahasiswa' }))}
-                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'mahasiswa' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-high'}`}
+                        className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-all ${formData.role === 'mahasiswa' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container-low dark:bg-white/5 border-outline-variant/20 dark:border-white/10 text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-high dark:hover:bg-white/10'}`}
                       >
                         Mahasiswa
                       </button>
@@ -120,7 +120,7 @@ function LoginPage({ onLogin, onRegister }) {
 
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1" htmlFor="email">Email</label>
+                <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1" htmlFor="email">Email</label>
                 <div className="relative group">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">mail</span>
                   <input 
@@ -131,7 +131,7 @@ function LoginPage({ onLogin, onRegister }) {
                     onChange={handleChange}
                     required
                     placeholder="student@studyfy.edu" 
-                    className="w-full pl-12 pr-4 py-4 bg-surface-container-low border border-outline-variant/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface"
+                    className="w-full pl-12 pr-4 py-4 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -139,7 +139,7 @@ function LoginPage({ onLogin, onRegister }) {
               {/* Password Field */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
-                  <label className="text-sm font-semibold text-on-surface-variant" htmlFor="password">Password</label>
+                  <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400" htmlFor="password">Password</label>
                   {!isRegister && <button type="button" className="text-xs font-bold text-primary hover:text-primary-dim transition-colors">Forgot Password?</button>}
                 </div>
                 <div className="relative group">
@@ -152,7 +152,7 @@ function LoginPage({ onLogin, onRegister }) {
                     onChange={handleChange}
                     required
                     placeholder="••••••••" 
-                    className="w-full pl-12 pr-12 py-4 bg-surface-container-low border border-outline-variant/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface"
+                    className="w-full pl-12 pr-12 py-4 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-outline/60 text-on-surface dark:text-slate-100"
                   />
                   <button 
                     type="button" 
@@ -188,7 +188,7 @@ function LoginPage({ onLogin, onRegister }) {
           
           {/* Footer Toggle */}
           <div className="mt-8 text-center">
-            <p className="text-on-surface-variant font-medium">
+            <p className="text-on-surface-variant dark:text-slate-400 font-medium">
               {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
               <button 
                 onClick={() => { setIsRegister(!isRegister); setError(""); }}
@@ -201,13 +201,9 @@ function LoginPage({ onLogin, onRegister }) {
         </div>
       </main>
 
-      {/* Illustrative Texture/Image */}
+      {/* Background accent */}
       <div className="hidden lg:block fixed top-0 right-0 w-1/3 h-full -z-20">
         <div className="w-full h-full opacity-20 bg-gradient-to-br from-primary/30 to-tertiary/20"></div>
-        <img  
-          alt="Modern minimalist university architecture" 
-          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay grayscale opacity-40"
-        />
       </div>
     </div>
   )

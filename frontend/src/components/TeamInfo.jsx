@@ -36,7 +36,7 @@ function TeamInfo() {
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setIsOpen(false) }}
         >
-          <div className="bg-surface-container-lowest rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in">
+          <div className="bg-surface-container-lowest dark:bg-[#1a1928] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in">
             {/* Modal Header */}
             <div className="relative h-28 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-end px-6 pb-4">
               <div className="absolute inset-0 opacity-20">
@@ -64,14 +64,14 @@ function TeamInfo() {
                 team?.members?.map((m, i) => (
                   <div 
                     key={i} 
-                    className="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl border border-outline-variant/5 hover:border-primary/20 transition-colors"
+                    className="flex items-center gap-4 p-4 bg-surface-container-low dark:bg-white/5 rounded-xl border border-outline-variant/5 dark:border-white/5 hover:border-primary/20 dark:hover:border-primary/30 transition-colors"
                   >
                     <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarColors[i % avatarColors.length]} text-white flex items-center justify-center font-bold text-base flex-shrink-0`}>
                       {m.name.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-on-surface text-sm truncate">{m.name}</p>
-                      <p className="text-on-surface-variant text-xs">{m.nim}</p>
+                      <p className="font-semibold text-on-surface dark:text-slate-100 text-sm truncate">{m.name}</p>
+                      <p className="text-on-surface-variant dark:text-slate-400 text-xs">{m.nim}</p>
                     </div>
                     <span className="bg-primary/10 text-primary text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
                       {m.role}
