@@ -13,7 +13,7 @@ services:
   # ==================== DATABASE ====================
   db:
     image: postgres:16-alpine
-    container_name: cloudapp-db
+    container_name: studyfy-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -37,7 +37,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: cloudapp-backend
+    container_name: studyfy-backend
     restart: unless-stopped
     env_file:
       - ./backend/.env.docker
@@ -62,7 +62,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://localhost:8000
-    container_name: cloudapp-frontend
+    container_name: studyfy-frontend
     restart: unless-stopped
     ports:
       - "3000:80"
@@ -74,10 +74,10 @@ services:
 # ==================== VOLUMES ====================
 volumes:
   pgdata:
-    name: cloudapp-pgdata
+    name: studyfy-pgdata
 
 # ==================== NETWORKS ====================
 networks:
   cloudnet:
-    name: cloudapp-network
+    name: studyfy-network
     driver: bridge
