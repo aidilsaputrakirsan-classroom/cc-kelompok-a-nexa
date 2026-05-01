@@ -17,6 +17,7 @@ class ItemBase(BaseModel):
     description: Optional[str] = Field(None, examples=["Laptop untuk cloud computing"], description="Deskripsi detail item")
     price: float = Field(..., gt=0, examples=[15000000], description="Harga per unit dalam Rupiah")
     quantity: int = Field(0, ge=0, examples=[10], description="Jumlah stok item")
+    category: Optional[str] = Field(None, max_length=50, examples=["electronics"], description="Kategori item (opsional)")
 
 
 # === CREATE SCHEMA (untuk POST request) ===
@@ -35,6 +36,7 @@ class ItemUpdate(BaseModel):
     description: Optional[str] = Field(None, examples=["Laptop high-end untuk gaming dan development"])
     price: Optional[float] = Field(None, gt=0, examples=[18500000.0])
     quantity: Optional[int] = Field(None, ge=0, examples=[5])
+    category: Optional[str] = Field(None, max_length=50, examples=["electronics"], description="Kategori item")
 
 
 # === RESPONSE SCHEMA (untuk output) ===
