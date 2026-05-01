@@ -76,7 +76,7 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
     }
   }
 
-  const inputClass = "w-full px-4 py-3 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-outline/60"
+  const inputClass = "w-full px-4 py-3 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl text-sm text-on-surface dark:text-slate-200 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-outline/60 dark:placeholder:text-slate-600"
 
   return (
     <div className="mb-6">
@@ -93,17 +93,17 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
 
       {/* Form Card */}
       {(isOpen || editingClass) && (
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 shadow-sm overflow-hidden">
+        <div className="bg-surface-container-lowest dark:bg-[#1a1928] rounded-xl border border-outline-variant/5 dark:border-white/5 shadow-sm overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/10 bg-surface-container-low/50">
-            <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/10 dark:border-white/5 bg-surface-container-low/50 dark:bg-white/5">
+            <h2 className="text-lg font-bold text-on-surface dark:text-white flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">{editingClass ? 'edit' : 'add_circle'}</span>
               {editingClass ? "Edit Kelas" : "Buat Kelas Baru"}
             </h2>
             {editingClass && (
               <button 
                 onClick={() => { onCancelEdit(); setIsOpen(false); }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-high dark:hover:bg-white/10 transition-colors"
               >
                 <span className="material-symbols-outlined text-base">close</span>
               </button>
@@ -122,11 +122,11 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
             {/* Row 1: Code + Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1">Kode Kelas *</label>
+                <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Kode Kelas *</label>
                 <input type="text" name="code" value={formData.code} onChange={handleChange} placeholder="MTK-01" className={inputClass} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1">Nama Kelas *</label>
+                <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Nama Kelas *</label>
                 <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Matematika Dasar" className={inputClass} />
               </div>
             </div>
@@ -134,15 +134,15 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
             {/* Row 2: Semester + Year + Max */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1">Semester *</label>
+                <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Semester *</label>
                 <input type="number" name="semester" value={formData.semester} onChange={handleChange} min="1" max="8" className={inputClass} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1">Tahun Ajaran *</label>
+                <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Tahun Ajaran *</label>
                 <input type="text" name="academic_year" value={formData.academic_year} onChange={handleChange} placeholder="2024/2025" className={inputClass} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1">Maks Mahasiswa</label>
+                <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Maks Mahasiswa</label>
                 <input type="number" name="max_students" value={formData.max_students} onChange={handleChange} placeholder="30" min="1" className={inputClass} />
               </div>
             </div>
@@ -150,13 +150,13 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
             {/* Row 3: Description + Instructor (admin only) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-on-surface-variant ml-1">Deskripsi</label>
+                <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Deskripsi</label>
                 <input type="text" name="description" value={formData.description} onChange={handleChange} placeholder="Opsional" className={inputClass} />
               </div>
               {/* Only show instructor selector for admin; for dosen it is automatically set to themselves */}
               {currentUser?.role !== 'dosen' ? (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-on-surface-variant ml-1">Guru Pengajar *</label>
+                  <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Guru Pengajar *</label>
                   <select 
                     name="instructor_id" 
                     value={formData.instructor_id} 
@@ -173,10 +173,10 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-on-surface-variant ml-1">Guru Pengajar</label>
-                  <div className="flex items-center gap-3 px-4 py-3 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm text-on-surface-variant">
+                  <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Guru Pengajar</label>
+                  <div className="flex items-center gap-3 px-4 py-3 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl text-sm text-on-surface-variant dark:text-slate-400">
                     <span className="material-symbols-outlined text-base text-primary">person</span>
-                    <span className="font-semibold text-on-surface">{currentUser?.name}</span>
+                    <span className="font-semibold text-on-surface dark:text-slate-200">{currentUser?.name}</span>
                     <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Anda (Dosen)</span>
                   </div>
                 </div>
@@ -196,7 +196,7 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
                 <button 
                   type="button" 
                   onClick={() => { onCancelEdit(); setIsOpen(false); }}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-surface-container-low dark:bg-white/5 text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-high dark:hover:bg-white/10 transition-colors border border-outline-variant/10 dark:border-white/5"
                 >
                   <span className="material-symbols-outlined text-base">close</span>
                   Batal
@@ -209,7 +209,7 @@ function ClassForm({ onSubmit, editingClass, onCancelEdit, currentUser }) {
                     const autoInstructorId = currentUser?.role === 'dosen' ? String(currentUser.id) : ""
                     setFormData({ name: "", code: "", description: "", semester: "1", academic_year: "2024/2025", max_students: "", instructor_id: autoInstructorId })
                   }}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-surface-container-low dark:bg-white/5 text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-high dark:hover:bg-white/10 transition-colors border border-outline-variant/10 dark:border-white/5"
                 >
                   <span className="material-symbols-outlined text-base">close</span>
                   Tutup

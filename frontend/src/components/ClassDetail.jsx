@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { fetchClassStudents, addStudentToClass, removeStudentFromClass } from "../services/api"
+import MaterialSection from "./MaterialSection"
 
 function ClassDetail({ classItem, onBack, currentUser }) {
   const [students, setStudents] = useState([])
@@ -82,7 +83,7 @@ function ClassDetail({ classItem, onBack, currentUser }) {
       </button>
 
       {/* Class Header */}
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 overflow-hidden shadow-sm mb-6">
+      <div className="bg-surface-container-lowest dark:bg-[#1a1928] rounded-xl border border-outline-variant/5 dark:border-white/5 overflow-hidden shadow-sm mb-6">
         <div className="h-40 bg-gradient-to-br from-indigo-500 to-purple-600 relative flex items-center px-8">
           <div className="absolute inset-0 opacity-20">
             <span className="material-symbols-outlined text-white absolute right-8 bottom-4 text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>menu_book</span>
@@ -95,23 +96,23 @@ function ClassDetail({ classItem, onBack, currentUser }) {
         </div>
         <div className="p-6">
           <div className="flex flex-wrap gap-3 mb-4">
-            <span className="flex items-center gap-2 bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-xl text-sm font-medium">
+            <span className="flex items-center gap-2 bg-surface-container-low dark:bg-white/5 text-on-surface-variant dark:text-slate-400 px-3 py-1.5 rounded-xl text-sm font-medium">
               <span className="material-symbols-outlined text-base">person</span>
               ID Guru: {classItem.instructor_id}
             </span>
-            <span className="flex items-center gap-2 bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-xl text-sm font-medium">
+            <span className="flex items-center gap-2 bg-surface-container-low dark:bg-white/5 text-on-surface-variant dark:text-slate-400 px-3 py-1.5 rounded-xl text-sm font-medium">
               <span className="material-symbols-outlined text-base">calendar_month</span>
               {classItem.academic_year}
             </span>
             {classItem.max_students && (
-              <span className="flex items-center gap-2 bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-xl text-sm font-medium">
+              <span className="flex items-center gap-2 bg-surface-container-low dark:bg-white/5 text-on-surface-variant dark:text-slate-400 px-3 py-1.5 rounded-xl text-sm font-medium">
                 <span className="material-symbols-outlined text-base">group</span>
                 Kapasitas: {classItem.max_students} mahasiswa
               </span>
             )}
           </div>
           {classItem.description && (
-            <p className="text-on-surface-variant text-sm leading-relaxed">{classItem.description}</p>
+            <p className="text-on-surface-variant dark:text-slate-400 text-sm leading-relaxed">{classItem.description}</p>
           )}
         </div>
       </div>
@@ -125,10 +126,10 @@ function ClassDetail({ classItem, onBack, currentUser }) {
       )}
 
       {/* Students Section */}
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 shadow-sm overflow-hidden">
+      <div className="bg-surface-container-lowest dark:bg-[#1a1928] rounded-xl border border-outline-variant/5 dark:border-white/5 shadow-sm overflow-hidden">
         {/* Section Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/10">
-          <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/10 dark:border-white/5">
+          <h3 className="text-lg font-bold text-on-surface dark:text-white flex items-center gap-2">
             <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
             Daftar Mahasiswa
             <span className="ml-1 bg-primary/10 text-primary text-sm font-bold px-2 py-0.5 rounded-full">
@@ -139,14 +140,14 @@ function ClassDetail({ classItem, onBack, currentUser }) {
 
         {/* Add Student Form */}
         {canManage && (
-          <div className="px-6 py-4 border-b border-outline-variant/10 bg-surface-container-low/50">
+          <div className="px-6 py-4 border-b border-outline-variant/10 dark:border-white/5 bg-surface-container-low/50 dark:bg-white/5">
             <form onSubmit={handleAddStudent} className="flex gap-3 items-center">
               <div className="relative flex-1 max-w-sm">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-base">person_add</span>
                 <select
                   value={newStudentId}
                   onChange={e => setNewStudentId(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant/20 rounded-xl text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest dark:bg-[#13121e] border border-outline-variant/20 dark:border-white/10 rounded-xl text-sm text-on-surface dark:text-slate-200 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
                 >
                   <option value="">Pilih mahasiswa untuk ditambahkan...</option>
                   {unassignedStudents.map(s => (
@@ -176,30 +177,30 @@ function ClassDetail({ classItem, onBack, currentUser }) {
             </div>
           ) : students.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3">group_off</span>
-              <p className="text-on-surface font-semibold mb-1">Belum ada mahasiswa</p>
-              <p className="text-on-surface-variant text-sm">Tambahkan mahasiswa ke kelas ini menggunakan form di atas.</p>
+              <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 dark:text-slate-600 mb-3">group_off</span>
+              <p className="text-on-surface dark:text-slate-200 font-semibold mb-1">Belum ada mahasiswa</p>
+              <p className="text-on-surface-variant dark:text-slate-500 text-sm">Tambahkan mahasiswa ke kelas ini menggunakan form di atas.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {students.map((student, idx) => (
                 <div 
                   key={student.id} 
-                  className="flex items-center justify-between p-4 rounded-xl bg-surface-container-low/50 hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant/10"
+                  className="flex items-center justify-between p-4 rounded-xl bg-surface-container-low/50 dark:bg-white/5 hover:bg-surface-container-low dark:hover:bg-white/10 transition-colors border border-transparent hover:border-outline-variant/10 dark:hover:border-white/5"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarColors[idx % avatarColors.length]} text-white flex items-center justify-center font-bold text-base flex-shrink-0`}>
                       {student.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-on-surface">{student.name}</p>
-                      <p className="text-xs text-on-surface-variant">{student.email}</p>
+                      <p className="text-sm font-semibold text-on-surface dark:text-slate-100">{student.name}</p>
+                      <p className="text-xs text-on-surface-variant dark:text-slate-400">{student.email}</p>
                     </div>
                   </div>
                   {canManage && (
                     <button 
                       onClick={() => handleRemoveStudent(student.id)} 
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-500 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-xl text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                     >
                       <span className="material-symbols-outlined text-sm">person_remove</span>
                       Keluarkan
@@ -211,6 +212,10 @@ function ClassDetail({ classItem, onBack, currentUser }) {
           )}
         </div>
       </div>
+
+      {/* Materi Section */}
+      <MaterialSection classItem={classItem} currentUser={currentUser} />
+
     </div>
   )
 }

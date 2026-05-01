@@ -7,6 +7,7 @@ import ClassForm from "./components/ClassForm"
 import ClassDetail from "./components/ClassDetail"
 import UserProfileModal from "./components/UserProfileModal"
 import TeamInfo from "./components/TeamInfo"
+import AboutPage from "./components/AboutPage"
 import {
   fetchClasses, createClass, updateClass, deleteClass, archiveClass, unarchiveClass,
   checkHealth, login, register, clearToken, getMe
@@ -21,6 +22,25 @@ function App() {
   const [activeTab, setActiveTab] = useState("beranda")
   const [isConnected, setIsConnected] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
+  // ==================== DARK MODE ====================
+  const [darkMode, setDarkMode] = useState(() => {
+    // Initialize from localStorage, default false (light)
+    return localStorage.getItem("studyfy-dark-mode") === "true"
+  })
+
+  // Apply dark class to <html> whenever darkMode changes
+  useEffect(() => {
+    const root = document.documentElement
+    if (darkMode) {
+      root.classList.add("dark")
+    } else {
+      root.classList.remove("dark")
+    }
+    localStorage.setItem("studyfy-dark-mode", String(darkMode))
+  }, [darkMode])
+
+  const toggleDarkMode = () => setDarkMode(prev => !prev)
 
   // --- Classes State ---
   const [classes, setClasses] = useState([])
@@ -136,7 +156,7 @@ function App() {
   }
 
   return (
-    <div className="bg-surface text-on-surface min-h-screen">
+    <div className="bg-surface dark:bg-[#0f0e17] text-on-surface dark:text-slate-100 min-h-screen transition-colors duration-300">
       <Header
         isConnected={isConnected}
         user={user}
@@ -147,6 +167,8 @@ function App() {
           setActiveTab(tab)
           setSelectedClass(null)
         }}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
       />
 
       {isProfileOpen && (
@@ -219,6 +241,13 @@ function App() {
               onUnarchive={handleClassUnarchive}
               isArchivePage={true}
             />
+          </div>
+        )}
+
+        {/* ABOUT TAB */}
+        {activeTab === "about" && (
+          <div className="flex-1">
+            <AboutPage onBack={() => setActiveTab("beranda")} />
           </div>
         )}
 

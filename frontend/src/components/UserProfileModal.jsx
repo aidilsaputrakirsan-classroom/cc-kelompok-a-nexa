@@ -50,14 +50,14 @@ function UserProfileModal({ user, onClose, onUpdateSuccess }) {
     return 'Mahasiswa'
   }
 
-  const inputClass = "w-full px-4 py-3 bg-surface-container-low border border-outline-variant/20 rounded-xl text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-outline/60"
+  const inputClass = "w-full px-4 py-3 bg-surface-container-low dark:bg-white/5 border border-outline-variant/20 dark:border-white/10 rounded-xl text-sm text-on-surface dark:text-slate-200 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-outline/60 dark:placeholder:text-slate-600"
 
   return (
     <div 
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-surface-container-lowest rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div className="bg-surface-container-lowest dark:bg-[#1a1928] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="relative h-32 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-end px-6 pb-4">
           <div className="absolute inset-0 opacity-10">
@@ -86,10 +86,10 @@ function UserProfileModal({ user, onClose, onUpdateSuccess }) {
         </div>
 
         {/* Badges */}
-        <div className="flex items-center gap-2 px-6 py-3 border-b border-outline-variant/10 bg-surface-container-low/50">
+        <div className="flex items-center gap-2 px-6 py-3 border-b border-outline-variant/10 dark:border-white/5 bg-surface-container-low/50 dark:bg-white/5">
           <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">{getRoleLabel()}</span>
           {user.semester && (
-            <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Semester {user.semester}</span>
+            <span className="bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full">Semester {user.semester}</span>
           )}
         </div>
 
@@ -103,7 +103,7 @@ function UserProfileModal({ user, onClose, onUpdateSuccess }) {
           )}
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-on-surface-variant ml-1">Nama Lengkap</label>
+            <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Nama Lengkap</label>
             <div className="relative group">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-base group-focus-within:text-primary transition-colors">badge</span>
               <input 
@@ -114,7 +114,7 @@ function UserProfileModal({ user, onClose, onUpdateSuccess }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-on-surface-variant ml-1">Nomor Telepon</label>
+            <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Nomor Telepon</label>
             <div className="relative group">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-base group-focus-within:text-primary transition-colors">phone</span>
               <input 
@@ -125,7 +125,7 @@ function UserProfileModal({ user, onClose, onUpdateSuccess }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-on-surface-variant ml-1">Alamat</label>
+            <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">Alamat</label>
             <div className="relative group">
               <span className="material-symbols-outlined absolute left-3 top-4 text-outline text-base group-focus-within:text-primary transition-colors">home</span>
               <textarea 
@@ -136,7 +136,7 @@ function UserProfileModal({ user, onClose, onUpdateSuccess }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-on-surface-variant ml-1">URL Foto Profil</label>
+            <label className="text-sm font-semibold text-on-surface-variant dark:text-slate-400 ml-1">URL Foto Profil</label>
             <div className="relative group">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-base group-focus-within:text-primary transition-colors">image</span>
               <input 
