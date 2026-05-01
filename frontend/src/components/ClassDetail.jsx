@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { fetchClassStudents, addStudentToClass, removeStudentFromClass } from "../services/api"
+import MaterialSection from "./MaterialSection"
 
 function ClassDetail({ classItem, onBack, currentUser }) {
   const [students, setStudents] = useState([])
@@ -211,6 +212,10 @@ function ClassDetail({ classItem, onBack, currentUser }) {
           )}
         </div>
       </div>
+
+      {/* Materi Section */}
+      <MaterialSection classItem={classItem} currentUser={currentUser} />
+
     </div>
   )
 }

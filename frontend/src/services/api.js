@@ -180,6 +180,54 @@ export async function fetchUserClasses(userId) {
   return handleResponse(response)
 }
 
+// ==================== MATERIAL API ====================
+
+export async function fetchMaterials(classId, params = {}) {
+  const query = new URLSearchParams()
+  if (params.skip !== undefined) query.append("skip", params.skip)
+  if (params.limit !== undefined) query.append("limit", params.limit)
+  const response = await fetch(`${API_URL}/classes/${classId}/materials?${query.toString()}`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function createMaterial(classId, materialData) {
+  const response = await fetch(`${API_URL}/classes/${classId}/materials`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(materialData),
+  })
+  return handleResponse(response)
+}
+
+export async function updateMaterial(classId, materialId, materialData) {
+  const response = await fetch(`${API_URL}/classes/${classId}/materials/${materialId}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(materialData),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteMaterial(classId, materialId) {
+  const response = await fetch(`${API_URL}/classes/${classId}/materials/${materialId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  })
+  if (response.status === 204) return null
+  return handleResponse(response)
+}
+
+export async function toggleMaterialPublish(classId, materialId, isPublished) {
+  const response = await fetch(`${API_URL}/classes/${classId}/materials/${materialId}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({ is_published: isPublished }),
+  })
+  return handleResponse(response)
+}
+
 // ==================== ITEMS API (kept for backend compatibility) ====================
 
 export async function fetchItems(search = "", skip = 0, limit = 20) {
