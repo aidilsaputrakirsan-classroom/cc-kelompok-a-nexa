@@ -40,3 +40,19 @@ shell-backend:
 # Masuk ke database
 shell-db:
 	docker compose exec db psql -U postgres -d studyfy
+
+# Jalankan linter untuk mengecek kerapian kode
+lint:
+	@echo "Menjalankan linter..."
+	# Nanti diisi dengan perintah linter (misal: flake8 / eslint)
+
+# Jalankan unit test
+test:
+	@echo "Menjalankan unit tests..."
+	# Nanti diisi dengan perintah test (misal: pytest)
+
+# Cek kesiapan kodingan sebelum di-merge (PR Check)
+pr-check:
+	@echo "Menjalankan PR checks (Build & Test)..."
+	make build
+	make test
