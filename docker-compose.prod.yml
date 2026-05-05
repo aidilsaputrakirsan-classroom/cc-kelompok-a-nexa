@@ -1,0 +1,13 @@
+services:
+     backend:
+       environment:
+         - DEBUG=false
+         - CORS_ORIGINS=https://yourdomain.com
+       restart: always
+
+     frontend:
+       restart: always
+
+     db:
+       restart: always
+       ports: !reset []
