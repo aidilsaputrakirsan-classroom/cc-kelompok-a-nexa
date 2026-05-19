@@ -15,12 +15,13 @@ def create_item(db: Session, item_data: ItemCreate) -> Item:
     return db_item
 
 
-def get_items(db: Session, skip: int = 0, limit: int = 20, search: str = None):
+def get_items(db: Session, skip: int = 0, limit: int = 20, search: str = None, category: str = None):
     """
-    Ambil daftar items dengan pagination & search.
+    Ambil daftar items dengan pagination, search, & filter kategori.
     - skip: jumlah data yang di-skip (untuk pagination)
     - limit: jumlah data per halaman
     - search: cari berdasarkan nama atau deskripsi
+    - category: filter berdasarkan kategori
     """
     query = db.query(Item)
     
@@ -31,6 +32,9 @@ def get_items(db: Session, skip: int = 0, limit: int = 20, search: str = None):
                 Item.description.ilike(f"%{search}%")
             )
         )
+    
+    if category:
+        query = query.filter(Item.category == category)
     
     total = query.count()
     items = query.order_by(Item.created_at.desc()).offset(skip).limit(limit).all()

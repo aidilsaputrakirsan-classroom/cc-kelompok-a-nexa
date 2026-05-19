@@ -1,0 +1,37 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+# LANGKAH: Concurrency Group
+# Ini akan membatalkan (cancel) proses CI yang sedang berjalan jika ada push baru di PR yang sama.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # LANGKAH: Timeout per Job
+    # Default GitHub adalah 360 menit. Kita batasi jadi 10 menit agar tidak "nyangkut".
+    timeout-minutes: 10
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Tests
+        run: npm test # atau command test Anda
+
+  # LANGKAH: Notifikasi jika Gagal
+  notify-failure:
+    needs: test
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post PR Comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            ❌ **CI Pipeline Gagal!**
+            Cek detail log di: [GitHub Actions Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
