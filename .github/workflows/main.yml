@@ -1,6 +1,8 @@
 name: CI Pipeline
 
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main, develop ]
 
@@ -35,3 +37,27 @@ jobs:
           message: |
             ❌ **CI Pipeline Gagal!**
             Cek detail log di: [GitHub Actions Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  deploy:
+    name: 🚀 Deploy to Render
+    runs-on: ubuntu-latest
+    needs: test  # Menunggu job 'test' di atasnya selesai dan hijau
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: 🏥 Health check
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+          
+          # Ganti URL ini dengan URL backend Render kamu yang asli!
+          HEALTH_URL="https://studyfy-db.onrender.com/health"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL)
+          
+          if [ "$HTTP_STATUS" == "200" ]; then
+            echo "✅ Health check passed! (HTTP $HTTP_STATUS)"
+          else
+            echo "❌ Health check FAILED! (HTTP $HTTP_STATUS)"
+            echo "Check Render dashboard for logs."
+            exit 1
+          fi
