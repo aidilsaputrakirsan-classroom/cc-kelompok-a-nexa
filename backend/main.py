@@ -1,10 +1,11 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi import FastAPI, Depends, HTTPException, Query, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
+from datetime import datetime, timezone, timedelta
 
 from database import engine, get_db
 from models import Base, User, UserRole
@@ -16,6 +17,9 @@ from schemas import (
     PasswordResetRequest, PasswordResetVerify, PasswordResetResponse,
     ClassCreate, ClassResponse, ClassListResponse,
     MaterialCreate, MaterialResponse, MaterialListResponse, MaterialUpdate,
+    AssignmentCreate, AssignmentUpdate, AssignmentResponse, AssignmentListResponse,
+    SubmissionResponse, SubmissionListResponse, SubmissionWithGradeResponse,
+    GradeCreate, GradeResponse,
 )
 from auth import (
     create_access_token, get_current_user, require_admin, require_instructor,
@@ -38,7 +42,6 @@ app = FastAPI(
 # Mengambil allowed origins dari .env, default ke localhost frontend (Vite)
 allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
 origins_list = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
-allow_origin_regex = None
 
 # CORS dibuka untuk frontend lokal dan origin yang diizinkan via environment.
 app.add_middleware(
@@ -531,6 +534,371 @@ def delete_material(
     success = crud.delete_material(db=db, material_id=material_id)
     if not success:
         raise HTTPException(status_code=500, detail="Gagal menghapus material")
+
+
+# ==================== ASSIGNMENT MANAGEMENT ====================
+
+def get_wita_now() -> datetime:
+    """Dapatkan waktu sekarang dalam timezone WITA (UTC+8)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+
+
+@app.post("/classes/{class_id}/assignments", response_model=AssignmentResponse, status_code=201)
+def create_assignment(
+    class_id: int,
+    assignment_data: AssignmentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Buat assignment baru untuk sebuah class. Hanya dosen yang bisa."""
+    # Verify class exists and user is the instructor
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    if db_class.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa membuat assignment untuk kelas Anda sendiri")
+    
+    assignment_dict = assignment_data.model_dump()
+    db_assignment = crud.create_assignment(
+        db=db,
+        class_id=class_id,
+        created_by=current_user.id,
+        assignment_data=assignment_dict,
+    )
+    return db_assignment
+
+
+@app.get("/classes/{class_id}/assignments", response_model=AssignmentListResponse)
+def list_assignments(
+    class_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil daftar assignment untuk sebuah class."""
+    # Verify class exists
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    result = crud.get_assignments(db=db, class_id=class_id, skip=skip, limit=limit, published_only=True)
+    return result
+
+
+@app.get("/classes/{class_id}/assignments/{assignment_id}", response_model=AssignmentResponse)
+def get_assignment(
+    class_id: int,
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil detail assignment."""
+    db_assignment = crud.get_assignment(db=db, assignment_id=assignment_id)
+    if not db_assignment or db_assignment.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Assignment tidak ditemukan")
+    
+    return db_assignment
+
+
+@app.put("/classes/{class_id}/assignments/{assignment_id}", response_model=AssignmentResponse)
+def update_assignment(
+    class_id: int,
+    assignment_id: int,
+    assignment_data: AssignmentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Update assignment. Hanya dosen pembuat yang bisa."""
+    db_assignment = crud.get_assignment(db=db, assignment_id=assignment_id)
+    if not db_assignment or db_assignment.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Assignment tidak ditemukan")
+    
+    # Enforce ownership
+    if db_assignment.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa mengubah assignment Anda sendiri")
+    
+    assignment_dict = assignment_data.model_dump(exclude_unset=True)
+    updated_assignment = crud.update_assignment(
+        db=db,
+        assignment_id=assignment_id,
+        assignment_data=assignment_dict,
+    )
+    return updated_assignment
+
+
+@app.delete("/classes/{class_id}/assignments/{assignment_id}", status_code=204)
+def delete_assignment(
+    class_id: int,
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Hapus assignment. Hanya dosen pembuat yang bisa."""
+    db_assignment = crud.get_assignment(db=db, assignment_id=assignment_id)
+    if not db_assignment or db_assignment.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Assignment tidak ditemukan")
+    
+    # Enforce ownership
+    if db_assignment.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa menghapus assignment Anda sendiri")
+    
+    success = crud.delete_assignment(db=db, assignment_id=assignment_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Gagal menghapus assignment")
+
+
+# ==================== SUBMISSION MANAGEMENT ====================
+
+@app.post("/classes/{class_id}/assignments/{assignment_id}/submissions", response_model=SubmissionResponse, status_code=201)
+def submit_assignment(
+    class_id: int,
+    assignment_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Submit assignment. Hanya mahasiswa yang enrolled di class yang bisa."""
+    # Verify class exists
+    db_class = crud.get_class(db=db, class_id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class tidak ditemukan")
+    
+    # Verify student is enrolled in class
+    if current_user not in db_class.users:
+        raise HTTPException(status_code=403, detail="Anda tidak terdaftar di class ini")
+    
+    # Verify assignment exists
+    db_assignment = crud.get_assignment(db=db, assignment_id=assignment_id)
+    if not db_assignment or db_assignment.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Assignment tidak ditemukan")
+    
+    # Verify student role
+    if current_user.role != UserRole.MAHASISWA:
+        raise HTTPException(status_code=403, detail="Hanya mahasiswa yang bisa submit assignment")
+    
+    # Validate file type (PDF only)
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Hanya file PDF yang diperbolehkan")
+    
+    # Read file and check size (max 2MB)
+    file_content = file.file.read()
+    file_size = len(file_content)
+    
+    if file_size > 2 * 1024 * 1024:  # 2MB
+        raise HTTPException(status_code=400, detail="Ukuran file maksimal 2MB")
+    
+    # Check deadline and allow_late_submission
+    current_time = get_wita_now()
+    is_late = current_time > db_assignment.deadline
+    
+    if is_late and not db_assignment.allow_late_submission:
+        raise HTTPException(
+            status_code=400,
+            detail="Deadline sudah terlewat dan tidak menerima submission terlambat",
+        )
+    
+    # Create upload directory if not exists
+    import os
+    upload_dir = f"uploads/assignments/{class_id}/{assignment_id}/{current_user.id}"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Save file with original filename
+    file_path = f"{upload_dir}/{file.filename}"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+    
+    # Create submission in database
+    db_submission = crud.create_submission(
+        db=db,
+        assignment_id=assignment_id,
+        student_id=current_user.id,
+        file_path=file_path,
+        original_filename=file.filename,
+        file_size=file_size,
+        is_late=is_late,
+    )
+    
+    return db_submission
+
+
+@app.get("/classes/{class_id}/assignments/{assignment_id}/submissions", response_model=SubmissionListResponse)
+def list_submissions(
+    class_id: int,
+    assignment_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Ambil daftar submissions untuk assignment. Hanya dosen pembuat yang bisa."""
+    # Verify assignment exists and user is instructor
+    db_assignment = crud.get_assignment(db=db, assignment_id=assignment_id)
+    if not db_assignment or db_assignment.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Assignment tidak ditemukan")
+    
+    if db_assignment.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa lihat submissions untuk assignment Anda")
+    
+    result = crud.get_submissions_for_assignment(
+        db=db,
+        assignment_id=assignment_id,
+        skip=skip,
+        limit=limit,
+    )
+    
+    return result
+
+
+@app.get("/classes/{class_id}/assignments/{assignment_id}/my-submission", response_model=SubmissionWithGradeResponse | None)
+def get_my_submission(
+    class_id: int,
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil submission saya untuk assignment ini."""
+    # Verify assignment exists
+    db_assignment = crud.get_assignment(db=db, assignment_id=assignment_id)
+    if not db_assignment or db_assignment.class_id != class_id:
+        raise HTTPException(status_code=404, detail="Assignment tidak ditemukan")
+    
+    # Get submission
+    db_submission = crud.get_student_submission(
+        db=db,
+        assignment_id=assignment_id,
+        student_id=current_user.id,
+    )
+    
+    if not db_submission:
+        return None
+    
+    # Get grade if exists
+    db_grade = crud.get_grade_by_submission(db=db, submission_id=db_submission.id)
+    
+    # Build response with grade
+    response = SubmissionWithGradeResponse(
+        id=db_submission.id,
+        assignment_id=db_submission.assignment_id,
+        student_id=db_submission.student_id,
+        original_filename=db_submission.original_filename,
+        file_size=db_submission.file_size,
+        submission_number=db_submission.submission_number,
+        submitted_at=db_submission.submitted_at,
+        is_late=db_submission.is_late,
+        created_at=db_submission.created_at,
+        score=db_grade.score if db_grade else None,
+        graded_at=db_grade.graded_at if db_grade else None,
+    )
+    
+    return response
+
+
+@app.get("/submissions/{submission_id}", response_model=SubmissionResponse)
+def get_submission(
+    submission_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil detail submission."""
+    db_submission = crud.get_submission(db=db, submission_id=submission_id)
+    if not db_submission:
+        raise HTTPException(status_code=404, detail="Submission tidak ditemukan")
+    
+    # Authorization: only student (owner) or instructor (owner of assignment) can view
+    if current_user.id != db_submission.student_id:
+        db_assignment = crud.get_assignment(db=db, assignment_id=db_submission.assignment_id)
+        if db_assignment.created_by != current_user.id:
+            raise HTTPException(status_code=403, detail="Anda tidak bisa melihat submission ini")
+    
+    return db_submission
+
+
+@app.delete("/submissions/{submission_id}/return", status_code=204)
+def return_submission(
+    submission_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Return submission (hapus) agar student bisa resubmit. Hanya instructor yang bisa."""
+    db_submission = crud.get_submission(db=db, submission_id=submission_id)
+    if not db_submission:
+        raise HTTPException(status_code=404, detail="Submission tidak ditemukan")
+    
+    # Verify instructor is owner of assignment
+    db_assignment = crud.get_assignment(db=db, assignment_id=db_submission.assignment_id)
+    if db_assignment.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa return submission untuk assignment Anda")
+    
+    # Delete submission (dan file)
+    success = crud.delete_submission(db=db, submission_id=submission_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Gagal return submission")
+
+
+# ==================== GRADING ====================
+
+@app.post("/submissions/{submission_id}/grade", response_model=GradeResponse, status_code=201)
+def submit_grade(
+    submission_id: int,
+    grade_data: GradeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor),
+):
+    """Submit grade untuk submission. Hanya dosen pembuat assignment yang bisa."""
+    # Verify submission exists
+    db_submission = crud.get_submission(db=db, submission_id=submission_id)
+    if not db_submission:
+        raise HTTPException(status_code=404, detail="Submission tidak ditemukan")
+    
+    # Verify instructor is owner of assignment
+    db_assignment = crud.get_assignment(db=db, assignment_id=db_submission.assignment_id)
+    if db_assignment.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda hanya bisa grade submission untuk assignment Anda")
+    
+    # Validate score is within max_score
+    if grade_data.score < 0 or grade_data.score > db_assignment.max_score:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Score harus antara 0 dan {db_assignment.max_score}",
+        )
+    
+    # Create/update grade
+    db_grade = crud.create_grade(
+        db=db,
+        submission_id=submission_id,
+        score=grade_data.score,
+        graded_by=current_user.id,
+    )
+    
+    return db_grade
+
+
+@app.get("/submissions/{submission_id}/grade", response_model=GradeResponse)
+def get_submission_grade(
+    submission_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil grade untuk submission."""
+    # Verify submission exists
+    db_submission = crud.get_submission(db=db, submission_id=submission_id)
+    if not db_submission:
+        raise HTTPException(status_code=404, detail="Submission tidak ditemukan")
+    
+    # Authorization: only student (owner) or instructor (owner of assignment) can view
+    if current_user.id != db_submission.student_id:
+        db_assignment = crud.get_assignment(db=db, assignment_id=db_submission.assignment_id)
+        if db_assignment.created_by != current_user.id:
+            raise HTTPException(status_code=403, detail="Anda tidak bisa melihat grade submission ini")
+    
+    # Get grade
+    db_grade = crud.get_grade_by_submission(db=db, submission_id=submission_id)
+    if not db_grade:
+        raise HTTPException(status_code=404, detail="Grade belum ada untuk submission ini")
+    
+    return db_grade
 
 
 @app.post("/items", response_model=ItemResponse, status_code=201)

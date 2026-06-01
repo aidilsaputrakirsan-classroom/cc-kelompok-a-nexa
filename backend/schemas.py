@@ -317,3 +317,98 @@ class MaterialUpdate(BaseModel):
     is_published: Optional[bool] = Field(None, examples=[True])
     external_link: Optional[str] = Field(None, examples=["https://example.com/video"])
 
+
+# ==================== ASSIGNMENT SCHEMAS ====================
+
+class AssignmentBase(BaseModel):
+    """Base schema untuk Assignment."""
+    title: str = Field(..., min_length=1, max_length=255, examples=["Cloud Deployment Project"], description="Judul assignment")
+    description: Optional[str] = Field(None, examples=["Deploy aplikasi ke cloud platform"], description="Deskripsi detail assignment")
+    deadline: datetime = Field(..., examples=["2024-05-01T23:59:59+08:00"], description="Batas waktu submission (UTC+8 WITA)")
+    allow_late_submission: bool = Field(default=False, examples=[False], description="Apakah menerima submission setelah deadline")
+    max_score: int = Field(default=100, ge=1, le=1000, examples=[100], description="Nilai maksimal (points)")
+    is_published: bool = Field(default=True, examples=[True], description="Apakah assignment visible untuk mahasiswa")
+
+
+class AssignmentCreate(AssignmentBase):
+    """Schema untuk membuat assignment baru."""
+    pass
+
+
+class AssignmentUpdate(BaseModel):
+    """Schema untuk update assignment."""
+    title: Optional[str] = Field(None, min_length=1, max_length=255, examples=["Updated Title"])
+    description: Optional[str] = Field(None, examples=["Updated description"])
+    deadline: Optional[datetime] = Field(None, examples=["2024-05-01T23:59:59+08:00"])
+    allow_late_submission: Optional[bool] = Field(None, examples=[True])
+    max_score: Optional[int] = Field(None, ge=1, le=1000, examples=[100])
+    is_published: Optional[bool] = Field(None, examples=[True])
+
+
+class AssignmentResponse(AssignmentBase):
+    """Schema untuk response assignment."""
+    id: int = Field(..., examples=[1], description="ID assignment unik")
+    class_id: int = Field(..., examples=[1], description="ID class yang memiliki assignment")
+    created_by: int = Field(..., examples=[1], description="ID dosen yang buat assignment")
+    created_at: datetime = Field(..., examples=["2024-04-19T10:30:00+00:00"], description="Waktu pembuatan assignment")
+    updated_at: Optional[datetime] = Field(None, examples=["2024-04-19T15:45:00+00:00"], description="Waktu update terakhir")
+
+    class Config:
+        from_attributes = True
+
+
+class AssignmentListResponse(BaseModel):
+    """Schema untuk response list assignments."""
+    total: int = Field(..., examples=[5], description="Total jumlah assignment di class")
+    assignments: list[AssignmentResponse] = Field(..., description="Daftar assignment")
+
+
+# ==================== SUBMISSION SCHEMAS ====================
+
+class SubmissionResponse(BaseModel):
+    """Schema untuk response submission."""
+    id: int = Field(..., examples=[1], description="ID submission unik")
+    assignment_id: int = Field(..., examples=[1], description="ID assignment yang disubmit")
+    student_id: int = Field(..., examples=[5], description="ID mahasiswa yang submit")
+    original_filename: str = Field(..., examples=["my-essay.pdf"], description="Nama file original yang di-upload")
+    file_size: int = Field(..., examples=[2048576], description="Ukuran file dalam bytes")
+    submission_number: int = Field(..., examples=[1], description="Urutan submission (1st, 2nd, 3rd, etc.)")
+    submitted_at: datetime = Field(..., examples=["2024-04-25T15:30:00+08:00"], description="Waktu submission (UTC+8 WITA)")
+    is_late: bool = Field(..., examples=[False], description="Apakah submission terlambat")
+    created_at: datetime = Field(..., examples=["2024-04-25T15:30:00+08:00"])
+
+    class Config:
+        from_attributes = True
+
+
+class SubmissionListResponse(BaseModel):
+    """Schema untuk response list submissions."""
+    total: int = Field(..., examples=[24], description="Total submissions untuk assignment ini")
+    submissions: list[SubmissionResponse] = Field(..., description="Daftar submission")
+
+
+class SubmissionWithGradeResponse(SubmissionResponse):
+    """Schema untuk response submission dengan grade."""
+    score: Optional[float] = Field(None, examples=[85.0], description="Score dari submission (jika sudah di-grade)")
+    graded_at: Optional[datetime] = Field(None, examples=["2024-04-26T10:00:00+08:00"], description="Waktu grading (jika sudah di-grade)")
+
+
+# ==================== GRADE SCHEMAS ====================
+
+class GradeCreate(BaseModel):
+    """Schema untuk membuat/submit grade."""
+    score: float = Field(..., ge=0, le=100, examples=[85.0], description="Score submission (0-100)")
+
+
+class GradeResponse(BaseModel):
+    """Schema untuk response grade."""
+    id: int = Field(..., examples=[1], description="ID grade unik")
+    submission_id: int = Field(..., examples=[1], description="ID submission yang di-grade")
+    score: float = Field(..., examples=[85.0], description="Score submission (0-100 points)")
+    graded_by: int = Field(..., examples=[1], description="ID dosen yang memberikan grade")
+    graded_at: datetime = Field(..., examples=["2024-04-26T10:00:00+08:00"], description="Waktu grading (UTC+8 WITA)")
+    created_at: datetime = Field(..., examples=["2024-04-26T10:00:00+08:00"])
+
+    class Config:
+        from_attributes = True
+

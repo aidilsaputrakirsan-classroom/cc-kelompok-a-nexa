@@ -158,3 +158,108 @@ class Material(Base):
 
     def __repr__(self):
         return f"<Material(id={self.id}, title='{self.title}', type={self.material_type})>"
+
+
+class Assignment(Base):
+    """Model untuk tabel 'assignments' — tugas/assignment yang di-upload oleh dosen."""
+    __tablename__ = "assignments"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    class_id = Column(Integer, ForeignKey('classes.id'), nullable=False)  # Kelas yang memiliki assignment
+    title = Column(String(255), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    
+    # Deadline & submission settings
+    deadline = Column(DateTime(timezone=True), nullable=False)  # Batas waktu submission
+    allow_late_submission = Column(Boolean, default=False)  # Apakah menerima submission setelah deadline
+    max_score = Column(Integer, default=100)  # Nilai maksimal (points)
+    
+    # Metadata
+    created_by = Column(Integer, ForeignKey('users.id'), nullable=False)  # Dosen yang buat assignment
+    is_published = Column(Boolean, default=True)  # Apakah assignment visible untuk students
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    class_rel = relationship(
+        "Class",
+        foreign_keys=[class_id],
+        viewonly=True,
+    )
+    instructor = relationship(
+        "User",
+        foreign_keys=[created_by],
+        viewonly=True,
+    )
+
+    def __repr__(self):
+        return f"<Assignment(id={self.id}, title='{self.title}', deadline={self.deadline})>"
+
+
+class Submission(Base):
+    """Model untuk tabel 'submissions' — submission tugas oleh mahasiswa."""
+    __tablename__ = "submissions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    assignment_id = Column(Integer, ForeignKey('assignments.id'), nullable=False)
+    student_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    
+    # File submission
+    file_path = Column(String(512), nullable=False)  # e.g., "/uploads/assignments/1/1/123/original_filename.pdf"
+    original_filename = Column(String(255), nullable=False)  # Keep track of original filename
+    file_size = Column(Integer, nullable=False)  # Ukuran file dalam bytes
+    
+    # Submission tracking
+    submission_number = Column(Integer, default=1)  # Ke berapa kali submit (1st, 2nd, 3rd, etc.)
+    submitted_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())  # Waktu submit
+    is_late = Column(Boolean, default=False)  # Apakah submission late
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    assignment = relationship(
+        "Assignment",
+        foreign_keys=[assignment_id],
+        viewonly=True,
+    )
+    student = relationship(
+        "User",
+        foreign_keys=[student_id],
+        viewonly=True,
+    )
+
+    def __repr__(self):
+        return f"<Submission(id={self.id}, assignment_id={self.assignment_id}, student_id={self.student_id}, submission_number={self.submission_number})>"
+
+
+class Grade(Base):
+    """Model untuk tabel 'grades' — nilai/penilaian submission oleh dosen."""
+    __tablename__ = "grades"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    submission_id = Column(Integer, ForeignKey('submissions.id'), nullable=False, unique=True)  # One grade per submission
+    score = Column(Float, nullable=False)  # Nilai (0-100 points)
+    
+    # Grading metadata
+    graded_by = Column(Integer, ForeignKey('users.id'), nullable=False)  # Dosen yang grade
+    graded_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())  # Waktu grading
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    submission = relationship(
+        "Submission",
+        foreign_keys=[submission_id],
+        viewonly=True,
+    )
+    instructor = relationship(
+        "User",
+        foreign_keys=[graded_by],
+        viewonly=True,
+    )
+
+    def __repr__(self):
+        return f"<Grade(id={self.id}, submission_id={self.submission_id}, score={self.score})>"
