@@ -38,7 +38,6 @@ app = FastAPI(
 # Mengambil allowed origins dari .env, default ke localhost frontend (Vite)
 allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
 origins_list = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
-allow_origin_regex = None
 
 # CORS dibuka untuk frontend lokal dan origin yang diizinkan via environment.
 app.add_middleware(
