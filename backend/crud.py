@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from datetime import datetime
-from models import Item, User, Class, user_class_association, UserRole, Material
+from models import Item, User, Class, user_class_association, UserRole, Material, Assignment, Submission, Grade
 from schemas import ItemCreate, ItemUpdate, UserCreate, UserProfileUpdate
 from auth import hash_password, verify_password, create_password_reset_token_record, verify_password_reset_token, clear_password_reset_token
 
@@ -436,4 +436,224 @@ def get_materials_by_type(db: Session, class_id: int, material_type: str, publis
         query = query.filter(Material.is_published == True)
     
     return query.order_by(Material.created_at.desc()).all()
+
+
+# ==================== ASSIGNMENT CRUD ====================
+
+def create_assignment(db: Session, class_id: int, created_by: int, assignment_data: dict) -> Assignment:
+    """Buat assignment baru untuk sebuah class."""
+    db_assignment = Assignment(
+        class_id=class_id,
+        created_by=created_by,
+        **assignment_data
+    )
+    db.add(db_assignment)
+    db.commit()
+    db.refresh(db_assignment)
+    return db_assignment
+
+
+def get_assignment(db: Session, assignment_id: int) -> Assignment | None:
+    """Ambil satu assignment berdasarkan ID."""
+    return db.query(Assignment).filter(Assignment.id == assignment_id).first()
+
+
+def get_assignments(db: Session, class_id: int, skip: int = 0, limit: int = 20, published_only: bool = True) -> dict:
+    """Ambil daftar assignment untuk sebuah class."""
+    query = db.query(Assignment).filter(Assignment.class_id == class_id)
+    
+    if published_only:
+        query = query.filter(Assignment.is_published == True)
+    
+    total = query.count()
+    assignments = query.order_by(Assignment.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return {"total": total, "assignments": assignments}
+
+
+def update_assignment(db: Session, assignment_id: int, assignment_data: dict) -> Assignment | None:
+    """Update assignment berdasarkan ID."""
+    db_assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    
+    if not db_assignment:
+        return None
+    
+    # Update hanya field yang disediakan
+    for field, value in assignment_data.items():
+        if value is not None:
+            setattr(db_assignment, field, value)
+    
+    db.commit()
+    db.refresh(db_assignment)
+    return db_assignment
+
+
+def delete_assignment(db: Session, assignment_id: int) -> bool:
+    """Hapus assignment berdasarkan ID. Return True jika berhasil."""
+    db_assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    
+    if not db_assignment:
+        return False
+    
+    db.delete(db_assignment)
+    db.commit()
+    return True
+
+
+# ==================== SUBMISSION CRUD ====================
+
+def create_submission(
+    db: Session,
+    assignment_id: int,
+    student_id: int,
+    file_path: str,
+    original_filename: str,
+    file_size: int,
+    is_late: bool = False,
+) -> Submission:
+    """Buat submission baru. Jika sudah ada submission, hapus yang lama."""
+    import os
+    
+    # Cek apakah sudah ada submission dari student ini untuk assignment ini
+    existing_submission = db.query(Submission).filter(
+        Submission.assignment_id == assignment_id,
+        Submission.student_id == student_id,
+    ).first()
+    
+    # Jika ada submission lama, hapus file dan record (untuk resubmission)
+    if existing_submission:
+        if os.path.exists(existing_submission.file_path):
+            try:
+                os.remove(existing_submission.file_path)
+            except Exception:
+                pass  # Log error but continue
+        
+        db.delete(existing_submission)
+        db.commit()
+    
+    # Buat submission baru dengan submission_number = 1 (latest submission)
+    db_submission = Submission(
+        assignment_id=assignment_id,
+        student_id=student_id,
+        file_path=file_path,
+        original_filename=original_filename,
+        file_size=file_size,
+        is_late=is_late,
+        submission_number=1,  # Latest submission is always #1
+    )
+    db.add(db_submission)
+    db.commit()
+    db.refresh(db_submission)
+    return db_submission
+
+
+def get_submission(db: Session, submission_id: int) -> Submission | None:
+    """Ambil satu submission berdasarkan ID."""
+    return db.query(Submission).filter(Submission.id == submission_id).first()
+
+
+def get_submissions_for_assignment(
+    db: Session,
+    assignment_id: int,
+    skip: int = 0,
+    limit: int = 20,
+) -> dict:
+    """Ambil semua submissions untuk sebuah assignment."""
+    query = db.query(Submission).filter(Submission.assignment_id == assignment_id)
+    
+    total = query.count()
+    submissions = query.order_by(Submission.submitted_at.desc()).offset(skip).limit(limit).all()
+    
+    return {"total": total, "submissions": submissions}
+
+
+def get_student_submission(db: Session, assignment_id: int, student_id: int) -> Submission | None:
+    """Ambil submission dari student tertentu untuk assignment tertentu."""
+    return db.query(Submission).filter(
+        Submission.assignment_id == assignment_id,
+        Submission.student_id == student_id,
+    ).first()
+
+
+def get_student_submissions_for_class(db: Session, class_id: int, student_id: int) -> list:
+    """Ambil semua submissions dari student untuk semua assignments di sebuah class."""
+    submissions = db.query(Submission).join(
+        Assignment, Submission.assignment_id == Assignment.id
+    ).filter(
+        Assignment.class_id == class_id,
+        Submission.student_id == student_id,
+    ).all()
+    
+    return submissions
+
+
+def delete_submission(db: Session, submission_id: int) -> bool:
+    """Hapus submission (dan file). Return True jika berhasil."""
+    import os
+    
+    db_submission = db.query(Submission).filter(Submission.id == submission_id).first()
+    
+    if not db_submission:
+        return False
+    
+    # Hapus file jika ada
+    if os.path.exists(db_submission.file_path):
+        try:
+            os.remove(db_submission.file_path)
+        except Exception:
+            pass  # Log error but continue
+    
+    db.delete(db_submission)
+    db.commit()
+    return True
+
+
+# ==================== GRADE CRUD ====================
+
+def create_grade(db: Session, submission_id: int, score: float, graded_by: int) -> Grade:
+    """Buat/submit grade untuk submission."""
+    # Cek apakah sudah ada grade untuk submission ini
+    existing_grade = db.query(Grade).filter(Grade.submission_id == submission_id).first()
+    
+    if existing_grade:
+        # Update existing grade
+        existing_grade.score = score
+        existing_grade.graded_by = graded_by
+        existing_grade.graded_at = datetime.now()
+        db.commit()
+        db.refresh(existing_grade)
+        return existing_grade
+    
+    # Buat grade baru
+    db_grade = Grade(
+        submission_id=submission_id,
+        score=score,
+        graded_by=graded_by,
+    )
+    db.add(db_grade)
+    db.commit()
+    db.refresh(db_grade)
+    return db_grade
+
+
+def get_grade(db: Session, grade_id: int) -> Grade | None:
+    """Ambil satu grade berdasarkan ID."""
+    return db.query(Grade).filter(Grade.id == grade_id).first()
+
+
+def get_grade_by_submission(db: Session, submission_id: int) -> Grade | None:
+    """Ambil grade berdasarkan submission ID."""
+    return db.query(Grade).filter(Grade.submission_id == submission_id).first()
+
+
+def delete_grade(db: Session, grade_id: int) -> bool:
+    """Hapus grade berdasarkan ID. Return True jika berhasil."""
+    db_grade = db.query(Grade).filter(Grade.id == grade_id).first()
+    
+    if not db_grade:
+        return False
+    
+    db.delete(db_grade)
+    db.commit()
+    return True
 
