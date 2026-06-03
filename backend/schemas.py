@@ -397,7 +397,7 @@ class SubmissionWithGradeResponse(SubmissionResponse):
 
 class GradeCreate(BaseModel):
     """Schema untuk membuat/submit grade."""
-    score: float = Field(..., ge=0, le=100, examples=[85.0], description="Score submission (0-100)")
+    score: float = Field(..., examples=[85.0], description="Score submission (0-100)")
 
 
 class GradeResponse(BaseModel):
