@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { fetchClassStudents, addStudentToClass, removeStudentFromClass } from "../services/api"
 import MaterialSection from "./MaterialSection"
-
+import AssignmentSection from "./AssignmentSection"
 function ClassDetail({ classItem, onBack, currentUser }) {
   const [students, setStudents] = useState([])
   const [availableStudents, setAvailableStudents] = useState([])
@@ -215,6 +215,9 @@ function ClassDetail({ classItem, onBack, currentUser }) {
 
       {/* Materi Section */}
       <MaterialSection classItem={classItem} currentUser={currentUser} />
+
+      {/* Assignment Section */}
+      <AssignmentSection classId={classItem.id} currentUser={currentUser} />
 
     </div>
   )
