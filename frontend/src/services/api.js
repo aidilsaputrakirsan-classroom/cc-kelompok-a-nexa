@@ -228,6 +228,105 @@ export async function toggleMaterialPublish(classId, materialId, isPublished) {
   return handleResponse(response)
 }
 
+// ==================== ASSIGNMENT API ====================
+
+export async function fetchAssignments(classId, params = {}) {
+  const query = new URLSearchParams()
+  if (params.skip !== undefined) query.append("skip", params.skip)
+  if (params.limit !== undefined) query.append("limit", params.limit)
+  const response = await fetch(`${API_URL}/classes/${classId}/assignments?${query.toString()}`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function createAssignment(classId, data) {
+  const response = await fetch(`${API_URL}/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function updateAssignment(classId, assignmentId, data) {
+  const response = await fetch(`${API_URL}/classes/${classId}/assignments/${assignmentId}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function deleteAssignment(classId, assignmentId) {
+  const response = await fetch(`${API_URL}/classes/${classId}/assignments/${assignmentId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  })
+  if (response.status === 204) return null
+  return handleResponse(response)
+}
+
+// ==================== SUBMISSION API ====================
+
+export async function submitAssignment(classId, assignmentId, file) {
+  const formData = new FormData()
+  formData.append("file", file)
+  const headers = {}
+  if (authToken) headers["Authorization"] = `Bearer ${authToken}`
+  const response = await fetch(
+    `${API_URL}/classes/${classId}/assignments/${assignmentId}/submissions`,
+    { method: "POST", headers, body: formData }
+  )
+  return handleResponse(response)
+}
+
+export async function getMySubmission(classId, assignmentId) {
+  const response = await fetch(
+    `${API_URL}/classes/${classId}/assignments/${assignmentId}/my-submission`,
+    { headers: authHeaders() }
+  )
+  return handleResponse(response)
+}
+
+export async function listSubmissions(classId, assignmentId, params = {}) {
+  const query = new URLSearchParams()
+  if (params.skip !== undefined) query.append("skip", params.skip)
+  if (params.limit !== undefined) query.append("limit", params.limit)
+  const response = await fetch(
+    `${API_URL}/classes/${classId}/assignments/${assignmentId}/submissions?${query.toString()}`,
+    { headers: authHeaders() }
+  )
+  return handleResponse(response)
+}
+
+export async function returnSubmission(submissionId) {
+  const response = await fetch(`${API_URL}/submissions/${submissionId}/return`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  })
+  if (response.status === 204) return null
+  return handleResponse(response)
+}
+
+// ==================== GRADING API ====================
+
+export async function submitGrade(submissionId, score) {
+  const response = await fetch(`${API_URL}/submissions/${submissionId}/grade`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ score }),
+  })
+  return handleResponse(response)
+}
+
+export async function getSubmissionGrade(submissionId) {
+  const response = await fetch(`${API_URL}/submissions/${submissionId}/grade`, {
+    headers: authHeaders(),
+  })
+  return handleResponse(response)
+}
+
 // ==================== ITEMS API (kept for backend compatibility) ====================
 
 export async function fetchItems(search = "", skip = 0, limit = 20) {
