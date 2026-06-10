@@ -1,5 +1,23 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
+// Centralized fetch wrapper to handle service unavailability
+const originalFetch = globalThis.fetch;
+const fetch = async (url, options) => {
+  try {
+    const response = await originalFetch(url, options);
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      throw new Error("Service temporarily unavailable");
+    }
+    return response;
+  } catch (error) {
+    if (error.message === "Service temporarily unavailable") {
+      throw error;
+    }
+    console.error("API Connection/Server Error:", error);
+    throw new Error("Service temporarily unavailable");
+  }
+};
+
 // ==================== TOKEN MANAGEMENT ====================
 
 let authToken = null
