@@ -1,0 +1,32 @@
+# ============================================================
+# Docker Compose — Studyfy (Development Override)
+# ============================================================
+
+services:
+  auth-service:
+    # Mount folder lokal ke dalam kontainer agar kode sinkron
+    volumes:
+      - ./services/auth-service:/app
+    # Menambahkan flag --reload untuk Uvicorn
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+
+  item-service:
+    volumes:
+      - ./services/item-service:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+
+ # 🎨 Mengaktifkan Hot-Reload pada Frontend React (Vite)
+  frontend:
+    container_name: studyfy-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Anonymous volume agar node_modules lokal tidak merusak container
+    ports:
+      - "3001:5173"
+    command: npm run dev -- --host
+    depends_on:
+      gateway:
+        condition: service_started

@@ -1,67 +1,87 @@
-# ============================================================
-# Makefile — DevOps Automation Tool (Microservices)
-# ============================================================
+.PHONY: up down build logs ps clean restart shell-auth shell-item shell-db shell-frontend lint test pr-check dev
 
-.PHONY: up down build logs restart ps clean shell-auth shell-item db-auth db-item
+# ---------------------------------------------------------
+# VARIABEL: Kunci utama agar Docker membaca semua file
+# ---------------------------------------------------------
+COMPOSE_CMD=docker compose -f docker-compose.yml -f docker-compose.microservices.yml -f docker-compose.dev.yml
 
-# ==================== TUGAS WAJIB MODUL 12 ====================
-
-# Start semua services
+# Start semua services di background
 up:
-	docker compose up -d
+	$(COMPOSE_CMD) up -d
 
-# Stop & remove containers
-down:
-	docker compose down
-
-# Lihat logs (semua services)
-logs:
-	docker compose logs -f
-
-# Restart semua
-restart:
-	docker compose restart
-
-# ==================== PERINTAH TAMBAHAN ====================
-
-# Start dengan rebuild
+# Start dengan rebuild (Gunakan ini kalau ada kodingan baru)
 build:
-	docker compose up --build -d
+	$(COMPOSE_CMD) up --build -d
 
-# Lihat status services
-ps:
-	docker compose ps
+# Shortcut untuk development (Hot-Reload)
+dev:
+	$(COMPOSE_CMD) up --build
 
-# Stop, remove, DAN hapus volumes (⚠️ data hilang!)
+# Menjalankan versi production (Tanpa hot-reload, port tertutup dan lebih stabil)
+prod:
+	docker compose -f docker-compose.prod.yml up -d --build
+
+# Stop & remove containers (Data aman)
+down:
+	$(COMPOSE_CMD) down
+
+# Stop, remove, DAN hapus volumes (⚠️ AWAS: Seluruh data database hilang!)
 clean:
-	docker compose down -v
+	$(COMPOSE_CMD) down -v
 	docker system prune -f
 
-# --- LOGS SPESIFIK ---
-logs-auth:
-	docker compose logs -f auth-service
+# Restart semua services (Gunakan ini kalau ada perubahan konfigurasi atau ingin refresh cepat)
+restart:
+	$(COMPOSE_CMD) restart
 
-logs-item:
-	docker compose logs -f item-service
+# Lihat logs menggunakan Helper Script untuk format yang lebih baik (Semua services, dengan filter warna-warni)
+logs:
+	bash ./scripts/logs.sh all
 
-logs-gateway:
-	docker compose logs -f gateway
+# Lihat logs bawaan secara real-time (semua services, tanpa filter)
+logs-raw:
+	$(COMPOSE_CMD) logs -f
 
-# --- SHELL ACCESS (Masuk ke dalam container) ---
+# Lihat logs khusus backend saja (Auth & Item)
+logs-backend:
+	$(COMPOSE_CMD) logs -f auth-service item-service
+
+# Lihat status container yang sedang berjalan
+ps:
+	$(COMPOSE_CMD) ps
+
+# Masuk ke terminal Auth Service
 shell-auth:
-	docker compose exec auth-service bash
+	$(COMPOSE_CMD) exec auth-service bash
 
+# Masuk ke terminal Item Service
 shell-item:
-	docker compose exec item-service bash
+	$(COMPOSE_CMD) exec item-service bash
 
-# --- DATABASE ACCESS ---
-db-auth:
-	docker compose exec auth-db psql -U postgres -d auth_db
+# Masuk ke dalam PostgreSQL database (Auth DB)
+shell-db:
+	$(COMPOSE_CMD) exec auth-db psql -U postgres -d safespace
 
-db-item:
-	docker compose exec item-db psql -U postgres -d item_db
+# Masuk ke terminal frontend
+shell-frontend:
+	$(COMPOSE_CMD) exec frontend sh
 
-# --- CI/CD & TESTING ---
+# Jalankan linter untuk mengecek kerapian kode
+lint:
+	@echo "Menjalankan linter..."
+	cd frontend && npm run lint
+
+# Jalankan unit test
+test:
+	@echo "Menjalankan unit tests Backend (Pytest)..."
+	cd backend && pytest
+	@echo "Menjalankan unit tests Frontend (Vitest)..."
+	cd frontend && npm test
+
+# Cek kesiapan kodingan sebelum di-merge (PR Check)
 pr-check:
-	@echo "Menjalankan PR checks (Build)..."
+	@echo "Menjalankan PR checks lokal (Lint, Build & Test)..."
+	make lint
+	make test
 	make build
+	@echo "✅ Semua check lokal berhasil! Kodingan aman untuk di-push dan di-PR."
