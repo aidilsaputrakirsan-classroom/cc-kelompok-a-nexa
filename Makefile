@@ -1,58 +1,67 @@
-.PHONY: up down build logs ps clean restart
+# ============================================================
+# Makefile — DevOps Automation Tool (Microservices)
+# ============================================================
+
+.PHONY: up down build logs restart ps clean shell-auth shell-item db-auth db-item
+
+# ==================== TUGAS WAJIB MODUL 12 ====================
 
 # Start semua services
 up:
 	docker compose up -d
 
+# Stop & remove containers
+down:
+	docker compose down
+
+# Lihat logs (semua services)
+logs:
+	docker compose logs -f
+
+# Restart semua
+restart:
+	docker compose restart
+
+# ==================== PERINTAH TAMBAHAN ====================
+
 # Start dengan rebuild
 build:
 	docker compose up --build -d
 
-# Stop & remove containers
-down:
-	docker compose down
+# Lihat status services
+ps:
+	docker compose ps
 
 # Stop, remove, DAN hapus volumes (⚠️ data hilang!)
 clean:
 	docker compose down -v
 	docker system prune -f
 
-# Restart semua
-restart:
-	docker compose restart
+# --- LOGS SPESIFIK ---
+logs-auth:
+	docker compose logs -f auth-service
 
-# Lihat logs (semua services)
-logs:
-	docker compose logs -f
+logs-item:
+	docker compose logs -f item-service
 
-# Lihat logs backend saja
-logs-backend:
-	docker compose logs -f backend
+logs-gateway:
+	docker compose logs -f gateway
 
-# Lihat status
-ps:
-	docker compose ps
+# --- SHELL ACCESS (Masuk ke dalam container) ---
+shell-auth:
+	docker compose exec auth-service bash
 
-# Masuk ke backend shell
-shell-backend:
-	docker compose exec backend bash
+shell-item:
+	docker compose exec item-service bash
 
-# Masuk ke database
-shell-db:
-	docker compose exec db psql -U postgres -d studyfy
+# --- DATABASE ACCESS ---
+db-auth:
+	docker compose exec auth-db psql -U postgres -d auth_db
 
-# Jalankan linter untuk mengecek kerapian kode
-lint:
-	@echo "Menjalankan linter..."
-	# Nanti diisi dengan perintah linter (misal: flake8 / eslint)
+db-item:
+	docker compose exec item-db psql -U postgres -d item_db
 
-# Jalankan unit test
-test:
-	@echo "Menjalankan unit tests..."
-	# Nanti diisi dengan perintah test (misal: pytest)
-
-# Cek kesiapan kodingan sebelum di-merge (PR Check)
+# --- CI/CD & TESTING ---
 pr-check:
-	@echo "Menjalankan PR checks (Build & Test)..."
+	@echo "Menjalankan PR checks (Build)..."
 	make build
-	make test
