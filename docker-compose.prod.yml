@@ -1,13 +1,135 @@
+# ============================================================
+# Docker Compose — Studyfy Production
+# Komputasi Awan — SI ITK
+# TUGAS DEVOPS: Multi-service, Networking, & Health Checks
+# ============================================================
+
 services:
-     backend:
-       environment:
-         - DEBUG=false
-         - CORS_ORIGINS=https://yourdomain.com
-       restart: always
+  # ==================== DATABASES ====================
+  auth-db:
+    image: postgres:16-alpine
+    container_name: studyfy-auth-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_db
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - cloudnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-     frontend:
-       restart: always
+  item-db:
+    image: postgres:16-alpine
+    container_name: studyfy-item-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: item_db
+    volumes:
+      - item_db_data:/var/lib/postgresql/data
+    networks:
+      - cloudnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d item_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-     db:
-       restart: always
-       ports: !reset []
+  # ==================== BACKEND SERVICES ====================
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: studyfy-auth-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@auth-db:5432/auth_db
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      CORS_ORIGINS: "http://localhost,http://localhost:5173"
+    networks:
+      - cloudnet
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    healthcheck:
+      # Menggunakan python karena base image python-slim biasanya tidak memiliki curl secara default
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  item-service:
+    build:
+      context: ./services/item-service
+      dockerfile: Dockerfile
+    container_name: studyfy-item-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CORS_ORIGINS: "http://localhost,http://localhost:5173"
+    networks:
+      - cloudnet
+    depends_on:
+      item-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ==================== FRONTEND ====================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: studyfy-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost
+    networks:
+      - cloudnet
+
+  # ==================== API GATEWAY ====================
+  gateway:
+    image: nginx:alpine
+    container_name: studyfy-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./services/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - cloudnet
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      item-service:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    restart: unless-stopped
+
+# ==================== VOLUMES ====================
+volumes:
+  auth_db_data:
+    name: studyfy-auth-db-data
+  item_db_data:
+    name: studyfy-item-db-data
+
+# ==================== NETWORKS ====================
+networks:
+  cloudnet:
+    name: studyfy-network
+    driver: bridge
