@@ -1,757 +1,568 @@
 # Architecture Guide — Studyfy
 
 > **Mata Kuliah:** Komputasi Awan — Sistem Informasi ITK  
-> **Fase:** Microservices (Minggu 12-14)  
+> **Fase:** Microservices (Minggu 12-14)
 
-Dokumentasi arsitektur sistem **Studyfy** — mulai dari diagram komponen, daftar services, API contract, cara menjalankan lokal, hingga cara debug per service.
-
----
-
-## 📑 Daftar Isi
-1. [Arsitektur Overview](#-arsitektur-overview)
-2. [Diagram Arsitektur](#-diagram-arsitektur)
-3. [Daftar Services & Ports](#-daftar-services--ports)
-4. [API Contract (Backend Services)](#-api-contract--backend-services)
-5. [Data Model & Relasi Database](#-data-model--relasi-database)
-6. [Cara Menjalankan Lokal](#-cara-menjalankan-lokal)
-7. [Cara Debug Per Service](#-cara-debug-per-service)
-8. [Environment Variables](#-environment-variables)
+Dokumentasi arsitektur sistem **Studyfy** — diagram komponen, daftar services, API contract, data model, cara deploy, dan monitoring.
 
 ---
 
-## 🏗️ Arsitektur Overview
+## Daftar Isi
+1. [Arsitektur Overview](#arsitektur-overview)
+2. [Dual-Mode Architecture](#dual-mode-architecture)
+3. [Diagram Arsitektur](#diagram-arsitektur)
+4. [Microservices Cluster](#microservices-cluster)
+5. [API Contract](#api-contract)
+6. [Data Model](#data-model)
+7. [Cara Deploy](#cara-deploy)
+8. [Monitoring](#monitoring)
+9. [Environment Variables](#environment-variables)
+10. [CI/CD Pipeline](#cicd-pipeline)
 
-Sistem **Studyfy** menggunakan arsitektur **modular monolith** dengan domain service separation di dalam satu aplikasi backend. Setiap domain service memiliki batasan tanggung jawab yang jelas dan berkomunikasi melalui REST API.
+---
 
-### Service Boundary
+## Arsitektur Overview
+
+Studyfy menggunakan **dual-mode architecture** — dapat berjalan sebagai modular monolith maupun microservices cluster penuh.
+
+| Mode | File | Services | Tujuan |
+|------|------|----------|--------|
+| **Monolith** | `docker-compose.yml` | db, backend, frontend | Development lokal cepat |
+| **Microservices** | `docker-compose.microservices.yml` | auth-db, item-db, auth-service, item-service, gateway, frontend, prometheus, grafana | UAS / Production |
+| **Production** | `docker-compose.prod.yml` | auth-db, item-db, auth-service, item-service, gateway, frontend | Production deploy |
+| **Dev overrides** | `docker-compose.dev.yml` | Hot-reload untuk auth-service, item-service, frontend | Development |
+
+### Stack
+
+| Layer | Teknologi |
+|-------|-----------|
+| Frontend | React (Vite) + Nginx |
+| Backend (Monolith) | Python 3.12, FastAPI, Uvicorn (port 8000) |
+| Auth Service | Python 3.12, FastAPI (port 8001) |
+| Item Service | Python 3.12, FastAPI (port 8002) |
+| API Gateway | Nginx (port 8080 / 80) |
+| Database | PostgreSQL 16 Alpine |
+| ORM | SQLAlchemy 2.x |
+| Auth | JWT (python-jose) + bcrypt (passlib) |
+| Monitoring | Prometheus + Grafana |
+| Container | Docker & Docker Compose |
+| CI/CD | GitHub Actions |
+
+### Key Features
+
+| Feature | Implementasi | File |
+|---------|-------------|------|
+| Circuit Breaker | Item Service → Auth Service calls | `services/item-service/circuit_breaker.py` |
+| Structured Logging | JSON format, correlation ID | `services/shared/logging_config.py` |
+| Request Logging | Timing, status, error rate alerting | `services/shared/logging_middleware.py` |
+| Metrics | In-memory collector, sliding window | `services/shared/metrics.py` |
+| Health Checks | Setiap service + container healthcheck | Semua service |
+| Resource Limits | CPU & memory limits per container | `docker-compose.microservices.yml` |
+| Retry Logic | 3 retry dengan exponential backoff | `services/item-service/auth_client.py` |
+
+---
+
+## Dual-Mode Architecture
+
+### Mode 1: Modular Monolith
+
+Satu aplikasi FastAPI (`backend/main.py`) menangani semua endpoint. Cocok untuk development cepat.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     CLIENT / BROWSER                        │
-│          React SPA (Vite + Nginx) — Port 3000               │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           │ REST API (HTTP/JSON)
-                           │ JWT Authentication
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    API GATEWAY / REVERSE PROXY              │
-│                         Nginx                               │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     BACKEND — FastAPI                       │
-│                      Port 8000                              │
-│                                                             │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐  │
-│  │  Auth    │ │  User    │ │  Class   │ │  Material      │  │
-│  │  Service │ │  Service │ │  Service │ │  Service       │  │
-│  └──────────┘ └──────────┘ └──────────┘ └────────────────┘  │
-│                                                             │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐  │
-│  │Assignment│ │Submission│ │  Grade   │ │  Item          │  │
-│  │ Service  │ │ Service  │ │  Service │ │  Service       │  │
-│  └──────────┘ └──────────┘ └──────────┘ └────────────────┘  │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │            Middleware Layer                          │   │
-│  │  ┌───────────┐  ┌───────────┐  ┌──────────────────┐  │   │
-│  │  │ JWT Auth  │  │ CORS      │  │ Error Handler    │  │   │
-│  │  │ Middleware│  │ Middleware│  │                  │  │   │
-│  │  └───────────┘  └───────────┘  └──────────────────┘  │   │
-│  └──────────────────────────────────────────────────────┘   │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           │ SQLAlchemy ORM
-                           ▼
-┌──────────────────────────────────────────────────────────────┐
-│                   POSTGRESQL DATABASE                        │
-│                      Port 5433                               │
-│                                                              │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐   │
-│  │  Users   │ │ Classes  │ │Materials │ │  Assignments   │   │
-│  │  Table   │ │ Table    │ │ Table    │ │  Table         │   │
-│  └──────────┘ └──────────┘ └──────────┘ └────────────────┘   │
-│                                                              │
-│  ┌───────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐  │
-│  │Submissions│ │ Grades   │ │  Items   │ │ User_Class     │  │
-│  │ Table     │ │ Table    │ │  Table   │ │ Assoc Table    │  │
-│  └───────────┘ └──────────┘ └──────────┘ └────────────────┘  │
-│                                                              │
-│                   Persistent Volume (Docker)                 │
-└──────────────────────────────────────────────────────────────┘
+Browser → Nginx :3000 → FastAPI :8000 → PostgreSQL :5433
+```
+
+### Mode 2: Microservices Cluster
+
+Service dipisah menjadi microservices dengan API Gateway sebagai single entry point.
+
+```
+Browser → Gateway Nginx :8080
+              ├── /auth/*    → Auth Service :8001 → auth-db :5432
+              ├── /items/*   → Item Service :8002 → item-db :5432
+              ├── /health    → Gateway (langsung)
+              └── /*         → Frontend :3000
 ```
 
 ---
 
-## 📐 Diagram Arsitektur
+## Diagram Arsitektur
 
-### High-Level Architecture
+### Microservices Architecture
 
 ```mermaid
 flowchart TB
-    subgraph CLIENT["🌐 Client Layer"]
-        BROWSER["🖥️ Browser<br/>React SPA"]
-        NGINX["⚡ Nginx<br/>Reverse Proxy<br/>Port 3000"]
+    subgraph EXTERNAL["External"]
+        USER["User"]
+        BROWSER["Browser"]
     end
 
-    subgraph BACKEND["🐍 Backend Layer"]
-        API["FastAPI App<br/>Port 8000"]
-        
-        subgraph SERVICES["Domain Services"]
-            AUTH["Auth Service<br/>JWT, Register, Login"]
-            USER["User Service<br/>Profile, Management"]
-            CLASS["Class Service<br/>CRUD, Archive, Students"]
-            MAT["Material Service<br/>Upload, CRUD"]
-            ASSIGN["Assignment Service<br/>CRUD, Deadlines"]
-            SUB["Submission Service<br/>File Upload, Tracking"]
-            GRADE["Grade Service<br/>Scoring, Grading"]
-            ITEM["Item Service<br/>CRUD, Stats, Category"]
+    subgraph MESH["studyfy-microservices-network"]
+        subgraph GATEWAY["API Gateway"]
+            GW["Nginx<br/>Port 8080"]
+        end
+
+        subgraph SERVICES["Microservices"]
+            AUTH["Auth Service<br/>Port 8001"]
+            ITEM["Item Service<br/>Port 8002<br/>+ Circuit Breaker"]
+        end
+
+        subgraph DB_LAYER["Databases"]
+            AUTH_DB[("Auth DB<br/>PostgreSQL 16<br/>Port 5432")]
+            ITEM_DB[("Item DB<br/>PostgreSQL 16<br/>Port 5432")]
+        end
+
+        subgraph FE["Frontend"]
+            FRONTEND["React SPA<br/>Nginx :3000"]
+        end
+
+        subgraph MONITOR["Monitoring"]
+            PROM["Prometheus<br/>Port 9090"]
+            GRAFANA["Grafana<br/>Port 3002"]
         end
     end
 
-    subgraph DATA["📦 Data Layer"]
-        DB[("PostgreSQL 16<br/>Port 5433")]
-        VOL[("Docker Volume<br/>studyfy-pgdata")]
-    end
-
-    BROWSER -->|"HTTP 3000"| NGINX
-    NGINX -->|"REST API 8000"| API
-    API --> AUTH
-    API --> USER
-    API --> CLASS
-    API --> MAT
-    API --> ASSIGN
-    API --> SUB
-    API --> GRADE
-    API --> ITEM
-    AUTH --> DB
-    USER --> DB
-    CLASS --> DB
-    MAT --> DB
-    ASSIGN --> DB
-    SUB --> DB
-    GRADE --> DB
-    ITEM --> DB
-    DB -.-> VOL
+    USER --> BROWSER
+    BROWSER --> GW
+    GW --> AUTH
+    GW --> ITEM
+    GW --> FRONTEND
+    AUTH --> AUTH_DB
+    ITEM --> ITEM_DB
+    ITEM -.->|"verify token"| AUTH
+    AUTH --> PROM
+    ITEM --> PROM
+    PROM --> GRAFANA
 ```
 
-### Request Flow
+### Request Flow with Circuit Breaker
 
 ```mermaid
 sequenceDiagram
-    participant C as 🌐 Client
-    participant N as ⚡ Nginx :3000
-    participant A as 🐍 API :8000
-    participant M as 🔐 Auth Middleware
-    participant S as 📦 Service Layer
-    participant D as 🗄️ Database :5433
+    participant C as Client
+    participant G as Gateway :8080
+    participant I as Item Service :8002
+    participant CB as Circuit Breaker
+    participant A as Auth Service :8001
+    participant DB as Item DB
 
-    C->>N: HTTP Request
-    N->>A: Proxy ke Backend
-    
-    alt Public Endpoint (register, login, health)
-        A->>S: Langsung ke service
-        S->>D: Query/Write
-        D-->>S: Result
-        S-->>A: Response
-        A-->>C: JSON Response
-    else Protected Endpoint
-        A->>M: Validasi JWT Token
-        M-->>A: User Payload
-        A->>S: Process request + user context
-        S->>D: Query/Write dengan authorization
-        D-->>S: Result
-        S-->>A: Response
-        A-->>C: JSON Response
+    C->>G: POST /items (JWT)
+    G->>I: Forward request
+    I->>CB: can_execute()?
+
+    alt Circuit CLOSED
+        CB-->>I: Yes
+        I->>A: GET /verify (Bearer token)
+        
+        alt Auth OK (200)
+            A-->>I: {user_id, email}
+            I->>DB: CRUD item
+            DB-->>I: Item
+            I-->>C: 201 Created
+        else Auth Error (5xx)
+            A-->>I: 503
+            I->>CB: record_failure()
+            I-->>C: 503 Service Unavailable
+        end
+    else Circuit OPEN
+        CB-->>I: No (fail fast)
+        I-->>C: 503 Circuit Breaker OPEN
     end
+```
+
+### Monolith Architecture
+
+```mermaid
+flowchart TB
+    subgraph LOCAL["Local Development"]
+        BROWSER["Browser"]
+        N["Nginx<br/>Port 3000"]
+        API["FastAPI Backend<br/>Port 8000"]
+        DB[("PostgreSQL<br/>Port 5433")]
+        VOL[("pgdata Volume")]
+    end
+
+    BROWSER --> N
+    N --> API
+    API --> DB
+    DB -.-> VOL
 ```
 
 ---
 
-## 🖥️ Daftar Services & Ports
+## Microservices Cluster
 
-| Service | Teknologi | Container Name | Port (Host) | Port (Container) | Network |
-|---------|-----------|----------------|-------------|------------------|---------|
-| **Frontend** | React + Vite + Nginx | `studyfy-frontend` | `3000` | `80` | studyfy-network |
-| **Backend API** | FastAPI + Uvicorn | `studyfy-backend` | `8000` | `8000` | studyfy-network |
-| **Database** | PostgreSQL 16 Alpine | `studyfy-db` | `5433` | `5432` | studyfy-network |
+### Services & Ports
 
-### Akses Aplikasi
+| Service | Container | Port (Host) | Port (Container) | Network |
+|---------|-----------|-------------|------------------|---------|
+| **API Gateway** | `studyfy-nginx-gateway` | `8080` | `80` | studyfy-mesh |
+| **Auth Service** | `studyfy-auth-service` | - | `8001` | studyfy-mesh |
+| **Item Service** | `studyfy-item-service` | - | `8002` | studyfy-mesh |
+| **Auth DB** | `studyfy-auth-db` | - | `5432` | studyfy-mesh |
+| **Item DB** | `studyfy-item-db` | - | `5432` | studyfy-mesh |
+| **Frontend** | `studyfy-frontend` | - | `80` | studyfy-mesh |
+| **Prometheus** | `studyfy-prometheus` | `9090` | `9090` | studyfy-mesh |
+| **Grafana** | `studyfy-grafana` | `3002` | `3000` | studyfy-mesh |
 
-| Service | URL (Lokal) | URL (Docker) |
-|---------|-------------|--------------|
-| Frontend | `http://localhost:3000` | `http://frontend:80` |
-| Backend API | `http://localhost:8000` | `http://backend:8000` |
-| PostgreSQL | `localhost:5433` | `db:5432` |
+### Resource Limits
+
+| Service | CPU Limit | Memory Limit | Restart |
+|---------|-----------|-------------|---------|
+| auth-db | 0.5 | 512M | unless-stopped |
+| item-db | 0.5 | 512M | unless-stopped |
+| auth-service | 0.25 | 256M | unless-stopped |
+| item-service | 0.25 | 256M | unless-stopped |
+| frontend | 0.25 | 256M | unless-stopped |
+| gateway | 0.1 | 256M | unless-stopped |
+
+### Logging
+
+Format: **JSON structured logging** via `services/shared/logging_config.py`
+
+Setiap log entry memiliki:
+- `timestamp` — ISO 8601 UTC
+- `level` — DEBUG/INFO/WARNING/ERROR/CRITICAL
+- `service` — nama service (via env `SERVICE_NAME`)
+- `message` — pesan log
+- `correlation_id` — UUID untuk tracking request antar service
+- `method`, `path`, `status_code`, `duration_ms` — untuk request logs
+- `alert: true` — jika error rate > 10% dalam 1 menit
+
+### Circuit Breaker
+
+**File:** `services/item-service/circuit_breaker.py`
+
+| State | Behavior | Recovery |
+|-------|----------|----------|
+| **CLOSED** | Request normal ke Auth Service | - |
+| **OPEN** | Fail fast — langsung return 503 | Cooldown 30s, lalu HALF_OPEN |
+| **HALF_OPEN** | 1 request diizinkan sebagai test | Success → CLOSED, Fail → OPEN |
+
+**Config:**
+- `failure_threshold`: 5 (kegagalan berturut-turut sebelum OPEN)
+- `cooldown_seconds`: 30 (waktu tunggu sebelum HALF_OPEN)
+
+### Retry Logic
+
+**File:** `services/item-service/auth_client.py`
+
+- Max retries: 3
+- Base delay: 0.5s
+- Backoff: exponential (0.5s, 1s, 2s)
+- Timeout per request: 5s
+- Retryable status codes: 500, 502, 503, 504
 
 ---
 
-## 📡 API Contract — Backend Services
+## API Contract
 
-### 1. Auth Service
+### Backend (Monolith Mode) — `backend/main.py`
 
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| POST | `/auth/register` | ❌ | - | Registrasi user baru |
-| POST | `/auth/login` | ❌ | - | Login & dapatkan JWT token |
-| GET | `/auth/me` | ✅ | - | Ambil data user yang login |
-| POST | `/auth/password-reset-request` | ❌ | - | Request reset password |
-| POST | `/auth/password-reset-verify` | ❌ | - | Verify token & reset password |
+| Method | Endpoint | Auth | Role | Fungsi |
+|--------|----------|------|------|--------|
+| GET | `/health` | - | - | Health check |
+| POST | `/auth/register` | - | - | Register user |
+| POST | `/auth/login` | - | - | Login |
+| GET | `/auth/me` | JWT | - | Profile saya |
+| POST | `/auth/password-reset-request` | - | - | Request reset password |
+| POST | `/auth/password-reset-verify` | - | - | Verify & reset password |
+| GET | `/users` | JWT | dosen/admin | List users |
+| GET | `/users/profile/{user_id}` | JWT | - | Profile user |
+| PUT | `/users/profile` | JWT | - | Update profile sendiri |
+| GET | `/users/{user_id}/classes` | JWT | - | Classes user |
+| POST | `/classes` | JWT | dosen | Buat class |
+| GET | `/classes` | JWT | - | List classes (filter) |
+| GET | `/classes/{class_id}` | JWT | - | Detail class |
+| PUT | `/classes/{class_id}` | JWT | dosen | Update class |
+| DELETE | `/classes/{class_id}` | JWT | dosen | Hapus class |
+| PATCH | `/classes/{class_id}/archive` | JWT | dosen | Archive |
+| PATCH | `/classes/{class_id}/unarchive` | JWT | dosen | Unarchive |
+| POST | `/classes/{class_id}/students/{user_id}` | JWT | dosen | Tambah student |
+| DELETE | `/classes/{class_id}/students/{user_id}` | JWT | dosen | Hapus student |
+| GET | `/classes/{class_id}/students` | JWT | - | List students |
+| POST | `/classes/{class_id}/materials` | JWT | dosen | Upload materi |
+| GET | `/classes/{class_id}/materials` | JWT | - | List materi |
+| GET | `/classes/{class_id}/materials/{material_id}` | JWT | - | Detail materi |
+| PUT | `/classes/{class_id}/materials/{material_id}` | JWT | dosen | Update materi |
+| DELETE | `/classes/{class_id}/materials/{material_id}` | JWT | dosen | Hapus materi |
+| POST | `/classes/{class_id}/assignments` | JWT | dosen | Buat assignment |
+| GET | `/classes/{class_id}/assignments` | JWT | - | List assignments |
+| GET | `/classes/{class_id}/assignments/{assignment_id}` | JWT | - | Detail assignment |
+| PUT | `/classes/{class_id}/assignments/{assignment_id}` | JWT | dosen | Update assignment |
+| DELETE | `/classes/{class_id}/assignments/{assignment_id}` | JWT | dosen | Hapus assignment |
+| POST | `/classes/{class_id}/assignments/{assignment_id}/submissions` | JWT | mahasiswa | Submit (PDF, max 2MB) |
+| GET | `/classes/{class_id}/assignments/{assignment_id}/submissions` | JWT | dosen | List submissions |
+| GET | `/classes/{class_id}/assignments/{assignment_id}/my-submission` | JWT | - | Submission saya + grade |
+| GET | `/submissions/{submission_id}` | JWT | - | Detail submission |
+| DELETE | `/submissions/{submission_id}/return` | JWT | dosen | Return submission |
+| POST | `/submissions/{submission_id}/grade` | JWT | dosen | Grade submission |
+| GET | `/submissions/{submission_id}/grade` | JWT | - | Lihat grade |
+| POST | `/items` | JWT | - | Buat item |
+| GET | `/items` | JWT | - | List items (search, category) |
+| GET | `/items/stats` | JWT | - | Item statistics |
+| GET | `/items/{item_id}` | JWT | - | Detail item |
+| PUT | `/items/{item_id}` | JWT | - | Update item |
+| DELETE | `/items/{item_id}` | JWT | - | Hapus item |
+| GET | `/team` | - | - | Info tim |
 
-**File:** `backend/auth.py`, `backend/main.py` (line 81-150)
+### Auth Service (Microservices Mode) — `services/auth-service/main.py`
 
-**Example Response Login (200 OK):**
+| Method | Endpoint | Auth | Fungsi |
+|--------|----------|------|--------|
+| GET | `/health` | - | Health check |
+| GET | `/metrics` | - | Metrics |
+| POST | `/register` | - | Register user |
+| POST | `/login` | - | Login, return JWT |
+| GET | `/verify` | Bearer | Verify token (dipanggil service lain) |
+
+### Item Service (Microservices Mode) — `services/item-service/main.py`
+
+| Method | Endpoint | Auth | Fungsi |
+|--------|----------|------|--------|
+| GET | `/health` | - | Health check (include CB status) |
+| GET | `/metrics` | - | Metrics |
+| POST | `/items` | JWT | Buat item |
+| GET | `/items` | JWT | List items (search, pagination) |
+| GET | `/items/stats` | JWT | Item statistics |
+| GET | `/items/{item_id}` | JWT | Detail item |
+| PUT | `/items/{item_id}` | JWT | Update item |
+| DELETE | `/items/{item_id}` | JWT | Hapus item |
+
+### Gateway Routes
+
+**File:** `services/gateway/nginx.conf`
+
+| Path | Target | Description |
+|------|--------|-------------|
+| `/auth/` | `auth-service:8001` | Auth endpoints |
+| `/items` | `item-service:8002/items` | Item endpoints |
+| `/health` | Gateway langsung | Health check aggregator |
+| `/` | `frontend:3000` | Static files / SPA |
+
+### Health Check Responses
+
+**Gateway:**
+```json
+{"status": "healthy", "service": "gateway"}
+```
+
+**Auth Service:**
+```json
+{"status": "healthy", "service": "auth-service", "version": "2.0.0"}
+```
+
+**Item Service (normal):**
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "token_type": "bearer",
-  "user": {
-    "id": 1,
-    "email": "user@student.itk.ac.id",
-    "name": "Nama Lengkap",
-    "role": "mahasiswa",
-    "is_active": true,
-    "semester": 5,
-    "created_at": "2026-04-29T10:00:00Z"
+  "status": "healthy",
+  "service": "item-service",
+  "version": "2.1.0",
+  "dependencies": {
+    "auth-service": {
+      "state": "CLOSED",
+      "failure_count": 0,
+      "total_rejected": 0
+    }
+  }
+}
+```
+
+**Item Service (degraded):**
+```json
+{
+  "status": "degraded",
+  "service": "item-service",
+  "version": "2.1.0",
+  "dependencies": {
+    "auth-service": {
+      "state": "OPEN",
+      "failure_count": 5,
+      "total_rejected": 10
+    }
   }
 }
 ```
 
 ---
 
-### 2. User Service
+## Data Model
 
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| GET | `/users` | ✅ | dosen/admin | List semua user (filter by role) |
-| GET | `/users/profile/{user_id}` | ✅ | - | Ambil profil user |
-| PUT | `/users/profile` | ✅ | - | Update profil sendiri |
-| GET | `/users/{user_id}/classes` | ✅ | - | Ambil classes user |
-
-**File:** `backend/main.py` (line 152-196, 355-367)
-
----
-
-### 3. Class Service
-
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| POST | `/classes` | ✅ | dosen | Buat class baru |
-| GET | `/classes` | ✅ | - | List classes (filterable) |
-| GET | `/classes/{class_id}` | ✅ | - | Detail class |
-| PUT | `/classes/{class_id}` | ✅ | dosen | Update class |
-| DELETE | `/classes/{class_id}` | ✅ | dosen | Hapus class |
-| PATCH | `/classes/{class_id}/archive` | ✅ | dosen | Archive class |
-| PATCH | `/classes/{class_id}/unarchive` | ✅ | dosen | Unarchive class |
-| POST | `/classes/{class_id}/students/{user_id}` | ✅ | dosen | Tambah student ke class |
-| DELETE | `/classes/{class_id}/students/{user_id}` | ✅ | dosen | Hapus student dari class |
-| GET | `/classes/{class_id}/students` | ✅ | - | List student di class |
-
-**File:** `backend/main.py` (line 198-383)
-
-**Example Response Class (200 OK):**
-```json
-{
-  "id": 1,
-  "name": "Cloud Computing",
-  "code": "TK301",
-  "description": "Pengenalan infrastruktur cloud",
-  "semester": 5,
-  "academic_year": "2025/2026",
-  "max_students": 40,
-  "instructor_id": 1,
-  "is_archived": false,
-  "created_at": "2026-04-29T10:00:00Z",
-  "updated_at": null
-}
-```
-
----
-
-### 4. Material Service
-
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| POST | `/classes/{class_id}/materials` | ✅ | dosen | Upload materi baru |
-| GET | `/classes/{class_id}/materials` | ✅ | - | List materi class |
-| GET | `/classes/{class_id}/materials/{material_id}` | ✅ | - | Detail materi |
-| PUT | `/classes/{class_id}/materials/{material_id}` | ✅ | dosen | Update materi |
-| DELETE | `/classes/{class_id}/materials/{material_id}` | ✅ | dosen | Hapus materi |
-
-**File:** `backend/main.py` (line 432-537)
-
-**Material Types:** `pdf`, `ppt`, `video`, `link`
-
----
-
-### 5. Assignment Service
-
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| POST | `/classes/{class_id}/assignments` | ✅ | dosen | Buat assignment |
-| GET | `/classes/{class_id}/assignments` | ✅ | - | List assignment class |
-| GET | `/classes/{class_id}/assignments/{assignment_id}` | ✅ | - | Detail assignment |
-| PUT | `/classes/{class_id}/assignments/{assignment_id}` | ✅ | dosen | Update assignment |
-| DELETE | `/classes/{class_id}/assignments/{assignment_id}` | ✅ | dosen | Hapus assignment |
-
-**File:** `backend/main.py` (line 540-650)
-
----
-
-### 6. Submission Service
-
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| POST | `/classes/{class_id}/assignments/{assignment_id}/submissions` | ✅ | mahasiswa | Submit assignment (file PDF, max 2MB) |
-| GET | `/classes/{class_id}/assignments/{assignment_id}/submissions` | ✅ | dosen | List submissions |
-| GET | `/classes/{class_id}/assignments/{assignment_id}/my-submission` | ✅ | mahasiswa | Submission saya |
-| GET | `/submissions/{submission_id}` | ✅ | - | Detail submission |
-| DELETE | `/submissions/{submission_id}/return` | ✅ | dosen | Return submission |
-
-**File:** `backend/main.py` (line 652-838)
-
-**Submission Rules:**
-- File format: **PDF only**
-- Max file size: **2MB**
-- Deadline validation dengan WITA (UTC+8) timezone
-- Late submission hanya jika `allow_late_submission = true`
-
----
-
-### 7. Grade Service
-
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| POST | `/submissions/{submission_id}/grade` | ✅ | dosen | Beri nilai submission |
-| GET | `/submissions/{submission_id}/grade` | ✅ | - | Ambil grade submission |
-
-**File:** `backend/main.py` (line 841-901)
-
-**Grading Rules:**
-- Score range: `0` hingga `max_score` (default 100)
-- Hanya dosen pembuat assignment yang bisa memberi grade
-- Student hanya bisa lihat grade submission sendiri
-
----
-
-### 8. Item Service
-
-| Method | Endpoint | Auth | Role | Deskripsi |
-|--------|----------|------|------|-----------|
-| POST | `/items` | ✅ | - | Buat item baru |
-| GET | `/items` | ✅ | - | List items (search + category filter) |
-| GET | `/items/stats` | ✅ | - | Statistik items |
-| GET | `/items/{item_id}` | ✅ | - | Detail item |
-| PUT | `/items/{item_id}` | ✅ | - | Update item |
-| DELETE | `/items/{item_id}` | ✅ | - | Hapus item |
-
-**File:** `backend/main.py` (line 905-968)
-
-**Query Parameters:**
-- `skip` (int, default 0) — offset pagination
-- `limit` (int, default 20) — items per page
-- `search` (string, optional) — search by name
-- `category` (string, optional) — filter by category
-
----
-
-### Public Endpoints
-
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/health` | ❌ | Health check (status semua komponen) |
-| GET | `/team` | ❌ | Informasi tim |
-
-**File:** `backend/main.py` (line 60-78, 973-983)
-
-**Health Check Response:**
-```json
-{
-  "status": "healthy",
-  "service": "backend",
-  "version": "1.0.0",
-  "database": "connected"
-}
-```
-
----
-
-## 🗄️ Data Model & Relasi Database
+**Monolith mode:** Semua tabel di satu database `studyfy` (PostgreSQL)
+**Microservices mode:** Tabel terpisah per service
+- `auth_db` — users, classes, materials, assignments, submissions, grades
+- `item_db` — items
 
 ```mermaid
 erDiagram
-    User ||--o{ Class : "mengelola sebagai instructor"
-    User }o--o{ Class : "terdaftar sebagai student"
+    User ||--o{ Class : "mengelola"
+    User }o--o{ Class : "terdaftar"
     User ||--o{ Material : "mengupload"
     User ||--o{ Assignment : "membuat"
     User ||--o{ Submission : "mengirim"
-    User ||--o{ Grade : "memberi nilai"
-
+    User ||--o{ Grade : "menilai"
     Class ||--o{ Material : "memiliki"
     Class ||--o{ Assignment : "memiliki"
-
     Assignment ||--o{ Submission : "menerima"
     Submission ||--o| Grade : "dinilai"
 
-    Item ||--o| Item : "-"
-
-    User {
-        int id PK
-        string email UK
-        string name
-        string hashed_password
-        enum role "admin | dosen | mahasiswa"
-        bool is_active
-        string phone "nullable"
-        string address "nullable"
-        string profile_picture "nullable"
-        int semester "nullable"
-        string sso_provider "nullable"
-        string sso_id UK "nullable"
-        string reset_token UK "nullable"
-        datetime reset_token_expiry "nullable"
-        datetime created_at
-        datetime updated_at
-    }
-
-    Class {
-        int id PK
-        string name
-        string code UK
-        string description "nullable"
-        int instructor_id FK
-        int semester
-        string academic_year
-        int max_students "nullable"
-        bool is_archived
-        datetime archived_at "nullable"
-        datetime created_at
-        datetime updated_at
-    }
-
-    Material {
-        int id PK
-        int class_id FK
-        string title
-        string description "nullable"
-        enum material_type "pdf | ppt | video | link"
-        string file_path "nullable"
-        int file_size "nullable"
-        string external_link "nullable"
-        int uploaded_by FK
-        bool is_published
-        datetime created_at
-        datetime updated_at
-    }
-
-    Assignment {
-        int id PK
-        int class_id FK
-        string title
-        string description "nullable"
-        datetime deadline
-        bool allow_late_submission
-        int max_score
-        int created_by FK
-        bool is_published
-        datetime created_at
-        datetime updated_at
-    }
-
-    Submission {
-        int id PK
-        int assignment_id FK
-        int student_id FK
-        string file_path
-        string original_filename
-        int file_size
-        int submission_number
-        datetime submitted_at
-        bool is_late
-        datetime created_at
-        datetime updated_at
-    }
-
-    Grade {
-        int id PK
-        int submission_id FK UK
-        float score
-        int graded_by FK
-        datetime graded_at
-        datetime created_at
-        datetime updated_at
-    }
-
-    Item {
-        int id PK
-        string name
-        string description "nullable"
-        float price
-        int quantity
-        string category "nullable"
-        datetime created_at
-        datetime updated_at
-    }
+    User { int id PK; string email UK; string name; string hashed_password; enum role; int semester }
+    Class { int id PK; string name; string code UK; int instructor_id FK; int semester; string academic_year; int max_students; bool is_archived }
+    Material { int id PK; int class_id FK; string title; enum type "pdf|ppt|video|link"; string file_path; int uploaded_by FK }
+    Assignment { int id PK; int class_id FK; string title; datetime deadline; bool allow_late; int max_score; int created_by FK }
+    Submission { int id PK; int assignment_id FK; int student_id FK; string file_path; int file_size; bool is_late }
+    Grade { int id PK; int submission_id FK UK; float score; int graded_by FK }
+    Item { int id PK; string name; float price; int quantity; string category; int owner_id FK }
 ```
-
-### Entity Relationship Summary
-
-| Entity | Tabel | Relasi Utama |
-|--------|-------|--------------|
-| **User** | `users` | M:N dengan Class (student), 1:N dengan Class (instructor) |
-| **Class** | `classes` | M:N dengan User, 1:N dengan Material & Assignment |
-| **Material** | `materials` | N:1 dengan Class & User |
-| **Assignment** | `assignments` | N:1 dengan Class & User, 1:N dengan Submission |
-| **Submission** | `submissions` | N:1 dengan Assignment & User, 1:1 dengan Grade |
-| **Grade** | `grades` | 1:1 dengan Submission, N:1 dengan User |
-| **Item** | `items` | Standalone |
 
 ---
 
-## 🚀 Cara Menjalankan Lokal
+## Cara Deploy
 
-### Prasyarat 
-- Docker & Docker Compose (recommended)
-- Atau: Python 3.10+, Node.js 18+, PostgreSQL
+### Mode Monolith (Development)
 
-### Opsi 1: Docker Compose (Recommended)
-
-Menjalankan semua services sekaligus:
 ```bash
 docker compose up -d
+# Backend: http://localhost:8000
+# Frontend: http://localhost:3000
 ```
 
-Verifikasi semua services berjalan:
+### Mode Microservices (UAS / Production)
+
 ```bash
-docker compose ps
+docker compose -f docker-compose.microservices.yml up -d --build
+# Gateway: http://localhost:8080
+# Grafana: http://localhost:3002
+# Prometheus: http://localhost:9090
 ```
 
-Output:
-```
-NAME              SERVICE           STATUS          PORTS
-studyfy-db        db                running          0.0.0.0:5433->5432/tcp
-studyfy-backend   backend           running          0.0.0.0:8000->8000/tcp
-studyfy-frontend  frontend          running          0.0.0.0:3000->80/tcp
-```
+### Mode Production
 
-Cek health:
 ```bash
-curl http://localhost:8000/health
+docker compose -f docker-compose.prod.yml up -d --build
+# Gateway: http://localhost:80
 ```
 
-### Opsi 2: Manual (Tanpa Docker)
+### Dev Mode (Hot-Reload)
 
-**1. Database**
 ```bash
-# Pastikan PostgreSQL berjalan di localhost:5432
-# Buat database studyfy
-psql -U postgres -c "CREATE DATABASE studyfy;"
+make dev
+# atau
+docker compose -f docker-compose.yml -f docker-compose.microservices.yml -f docker-compose.dev.yml up --build
 ```
 
-**2. Backend**
+### Makefile Commands
+
 ```bash
-cd backend
-cp .env.example .env
-# Edit .env: isi DATABASE_URL
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-
-**3. Frontend**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Stop Services
-```bash
-# Docker
-docker compose down
-
-# Manual
-# Ctrl+C di terminal masing-masing
-```
-
-### Lihat Logs
-```bash
-# Semua services
-docker compose logs -f
-
-# Service spesifik
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f db
+make up        # Start all services
+make build     # Rebuild & start
+make dev       # Dev mode with hot-reload
+make prod      # Production mode
+make down      # Stop containers
+make clean     # Stop + delete volumes (data hilang!)
+make logs      # Colorized logs
+make ps        # Container status
+make test      # Run pytest + vitest
+make lint      # Run linter
+make pr-check  # Lint + test + build
 ```
 
 ---
 
-## 🔍 Cara Debug Per Service
+## Monitoring
 
-### Backend Debug
+### Prometheus
 
-**1. Cek log backend**
-```bash
-docker compose logs -f backend
+Semua service di-microservices cluster meng-expose metrics di `/metrics`:
+
+| Metric | Description |
+|--------|-------------|
+| request_count | Total requests |
+| error_count | Total errors (4xx + 5xx) |
+| status_counts | Per-status code counter |
+| latency (avg/p95/p99) | Request duration |
+| error_rate_last_minute | Error rate dalam sliding window 60s |
+
+### Grafana
+
+Akses di `http://localhost:3002` (default: admin/admin)
+
+Visualisasi:
+- Request rate per service
+- Error rate dashboard
+- Circuit breaker state
+- Latency distribution
+- Resource usage (CPU/Memory)
+
+### Logging
+
+Semua service menggunakan JSON structured logging. Log dikirim ke stdout dan bisa di-collect oleh `journald` atau `fluentd`.
+
+```json
+{"timestamp": "2026-05-03T10:00:00Z", "level": "INFO", "service": "item-service", "correlation_id": "a1b2c3d4e5f6", "method": "POST", "path": "/items", "status_code": 201, "duration_ms": 45.2}
 ```
-
-**2. Cek environment variables**
-```bash
-docker compose exec backend env | grep -E "DATABASE|CORS|ALLOWED"
-```
-
-**3. Cek koneksi database**
-```bash
-docker compose exec backend python -c "
-from database import engine
-from sqlalchemy import text
-result = engine.connect().execute(text('SELECT 1'))
-print('Database OK:', result.fetchone())
-"
-```
-
-**4. Jalankan pytest di dalam container**
-```bash
-docker compose exec backend pytest -v
-```
-
-**5. Akses database langsung**
-```bash
-docker compose exec db psql -U postgres -d studyfy -c "\dt"
-```
-
-**6. Cek table structure**
-```sql
-docker compose exec db psql -U postgres -d studyfy -c "\d+ users"
-```
-
-### Frontend Debug
-
-**1. Cek log frontend (Nginx)**
-```bash
-docker compose logs -f frontend
-```
-
-**2. Cek environment variable frontend**
-```bash
-docker compose exec frontend env | grep VITE
-```
-
-**3. Cek build frontend**
-```bash
-cd frontend
-npm install
-npm run build
-# Cek folder dist/
-```
-
-**4. Cek error di browser:**
-- Buka `http://localhost:3000`
-- Klik kanan → **Inspect**
-- Tab **Console** — lihat error JavaScript
-- Tab **Network** — cek response API
-
-### Database Debug
-
-**1. Query langsung ke PostgreSQL**
-```bash
-docker compose exec -it db psql -U postgres -d studyfy
-```
-
-**2. Cek jumlah data per tabel**
-```sql
-SELECT schemaname, tablename, n_live_tup
-FROM pg_stat_user_tables
-ORDER BY n_live_tup DESC;
-```
-
-**3. Cek koneksi aktif**
-```sql
-SELECT pid, usename, application_name, client_addr, state
-FROM pg_stat_activity;
-```
-
-**4. Backup & restore database**
-```bash
-# Backup
-docker compose exec db pg_dump -U postgres studyfy > backup.sql
-
-# Restore
-cat backup.sql | docker compose exec -T db psql -U postgres studyfy
-```
-
-### Docker Network Debug
-
-**1. Cek network**
-```bash
-docker network inspect studyfy-network
-```
-
-**2. Cek DNS resolution antar container**
-```bash
-docker compose exec backend ping db
-docker compose exec backend python -c "import socket; print(socket.gethostbyname('db'))"
-```
-
-**3. Cek port yang bind**
-```bash
-docker compose ps
-netstat -ano | findstr :8000
-netstat -ano | findstr :3000
-netstat -ano | findstr :5433
-```
-
-### Debug Checklist
-
-| Masalah | Cek Pertama | Solusi |
-|---------|-------------|--------|
-| Backend 502/503 | Log backend & health endpoint | Restart backend: `docker compose restart backend` |
-| Frontend blank page | Browser console (JS error) | Rebuild frontend: `docker compose up -d --build frontend` |
-| Database connection refused | `docker compose ps` (cek status db) | Restart database: `docker compose restart db` |
-| Port conflict | `netstat -ano \| findstr :8000` | Matikan aplikasi lain di port yang sama |
-| File upload failed | Cek folder `uploads/` permission | `docker compose exec backend mkdir -p uploads/assignments` |
-| CI pipeline failed | Baca log di GitHub Actions → tab Checks | Fix test atau build sesuai error message |
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
-### Backend (`backend/.env`)
+### Backend (Monolith Mode)
 
-| Variable | Required | Default | Deskripsi |
-|----------|----------|---------|-----------|
-| `DATABASE_URL` | ✅ | - | PostgreSQL connection string |
-| `SECRET_KEY` | ✅ | - | Secret key untuk JWT signing |
-| `ALGORITHM` | ❌ | `HS256` | JWT encryption algorithm |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | ❌ | `30` | JWT token expiry (menit) |
-| `ALLOWED_ORIGINS` | ❌ | `http://localhost:5173` | CORS allowed origins |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `sqlite:///./test.db` | Database connection |
+| `SECRET_KEY` | (built-in) | JWT signing key |
+| `ALGORITHM` | `HS256` | JWT algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | Token expiry |
+| `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | CORS |
+| `APP_ENV` | `development` | Environment mode |
+| `DEBUG` | `True` (dev) / `False` (prod) | Debug mode |
+| `LOG_LEVEL` | `DEBUG` (dev) / `WARNING` (prod) | Log level |
 
-**Example `.env`:**
-```
-DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/studyfy
-SECRET_KEY=rahasiasekali123
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
-```
+**Config class:** `backend/config.py` — `DevelopmentConfig` atau `ProductionConfig`
 
-### Frontend (`frontend/.env`)
+### Auth Service
 
-| Variable | Required | Default | Deskripsi |
-|----------|----------|---------|-----------|
-| `VITE_API_URL` | ✅ | `http://localhost:8000` | Backend API base URL |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | - | PostgreSQL connection |
+| `SECRET_KEY` | `dev-secret-key` | JWT signing |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Token expiry |
 
----
+### Item Service
 
-## 📚 Referensi
-
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [SQLAlchemy ORM Guide](https://docs.sqlalchemy.org/en/20/orm/)
-- [Docker Compose Overview](https://docs.docker.com/compose/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/16/)
-- [Nginx Reverse Proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | - | PostgreSQL connection |
+| `AUTH_SERVICE_URL` | `http://auth-service:8001` | Auth service endpoint |
 
 ---
 
+## CI/CD Pipeline
+
+### GitHub Actions
+
+**File:** `.github/workflows/ci-testing.yml` (push — build & integration test)
+
+```yaml
+- Build Docker images
+- Docker Compose up
+- Wait for health
+- Run tests
+- Docker Compose down
+```
+
+**File:** `.github/workflows/main.yml` (PR to main/develop)
+
+```yaml
+jobs:
+  test-frontend:
+    - npm ci
+    - npm test -- --run | npm run build
+  notify-failure:
+    - Comment on PR if failed
+```
+
+---
+
+*Last updated: 2026-05-03 | Lead QA & Docs*
