@@ -38,6 +38,8 @@ class JSONFormatter(logging.Formatter):
             log_entry["duration_ms"] = record.duration_ms
         if hasattr(record, "user_id"):
             log_entry["user_id"] = record.user_id
+        if hasattr(record, "alert"):
+            log_entry["alert"] = record.alert
 
         # Tambah exception info jika ada
         if record.exc_info and record.exc_info[0] is not None:

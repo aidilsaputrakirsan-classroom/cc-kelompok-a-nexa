@@ -30,6 +30,9 @@ class MetricsCollector:
             "total_latency_ms": 0,
         })
 
+        # Sliding window for error alerting (last 60 seconds)
+        self.sliding_window = []
+
     def record_request(self, method: str, path: str, status_code: int, duration_ms: float):
         """Catat satu request."""
         with self._lock:
@@ -50,6 +53,24 @@ class MetricsCollector:
             self.endpoint_stats[key]["total_latency_ms"] += duration_ms
             if status_code >= 400:
                 self.endpoint_stats[key]["errors"] += 1
+
+            # Sliding window for error rate check
+            self.sliding_window.append((time.time(), status_code >= 400))
+
+    def get_error_rate_last_minute(self) -> float:
+        """Hitung error rate dalam 1 menit terakhir."""
+        now = time.time()
+        one_minute_ago = now - 60.0
+        with self._lock:
+            # Prune old records
+            self.sliding_window = [r for r in self.sliding_window if r[0] >= one_minute_ago]
+            
+            total = len(self.sliding_window)
+            if total == 0:
+                return 0.0
+            
+            errors = sum(1 for r in self.sliding_window if r[1])
+            return (errors / total) * 100.0
 
     def get_metrics(self) -> dict:
         """Return snapshot metrics."""
@@ -103,6 +124,7 @@ class MetricsCollector:
             self.status_counts.clear()
             self.latencies.clear()
             self.endpoint_stats.clear()
+            self.sliding_window.clear()
 
 
 # Singleton instance

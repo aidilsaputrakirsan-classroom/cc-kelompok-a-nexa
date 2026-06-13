@@ -34,6 +34,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             duration_ms = round((time.time() - start_time) * 1000, 2)
             metrics.record_request(request.method, request.url.path, 500, duration_ms)
+            
+            # Check error rate in last minute
+            error_rate = metrics.get_error_rate_last_minute()
+            if error_rate > 10.0:
+                logger.critical(
+                    f"High error rate detected: {error_rate:.2f}% in the last minute",
+                    extra={
+                        "correlation_id": correlation_id,
+                        "alert": True,
+                    }
+                )
+
             logger.error(
                 f"Request failed: {request.method} {request.url.path}",
                 extra={
@@ -54,6 +66,17 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             request.method, request.url.path,
             response.status_code, duration_ms
         )
+
+        # Check error rate in last minute
+        error_rate = metrics.get_error_rate_last_minute()
+        if error_rate > 10.0:
+            logger.critical(
+                f"High error rate detected: {error_rate:.2f}% in the last minute",
+                extra={
+                    "correlation_id": correlation_id,
+                    "alert": True,
+                }
+            )
 
         # Log request (skip health checks agar log tidak terlalu noisy)
         if request.url.path not in ["/health", "/metrics"]:
