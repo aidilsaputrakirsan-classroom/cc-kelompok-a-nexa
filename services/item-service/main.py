@@ -3,16 +3,24 @@ Item Service — Handles inventory management.
 Berkomunikasi dengan Auth Service untuk verifikasi token.
 """
 import os
+import logging
+from logging_config import setup_logging
+from logging_middleware import RequestLoggingMiddleware
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from metrics import metrics
+
 
 from database import engine, get_db, Base
 from models import Item
 from schemas import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse, ItemStatsResponse
 from auth_client import verify_token_with_auth_service
 from auth_client import auth_circuit
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -33,6 +41,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(RequestLoggingMiddleware)
+
 
 # =====================
 # ENDPOINTS
@@ -44,6 +54,14 @@ def health_check():
         "status": "healthy",
         "service": "item-service",
         "version": "2.0.0",
+    }
+
+@app.get("/metrics")
+def get_metrics():
+    """Return application metrics."""
+    return {
+        "service": "auth-service",
+        **metrics.get_metrics(),
     }
 
 @app.get("/health")
