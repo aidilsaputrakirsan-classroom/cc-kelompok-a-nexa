@@ -86,3 +86,34 @@ def test_get_item_stats_empty(client):
     assert data["total_value"] == 0.0
     assert data["termahal"] == 0.0
     assert data["termurah"] == 0.0
+
+
+def test_error_rate_alerting(client, caplog):
+    import logging
+    from metrics import metrics
+    
+    # Clean/reset metrics sliding window before the test
+    metrics.reset()
+    
+    # Prepare to capture logs at CRITICAL level
+    with caplog.at_level(logging.CRITICAL):
+        # 1. First, make a successful request (GET /health)
+        response = client.get("/health")
+        assert response.status_code == 200
+        # No critical logs yet (0% error rate)
+        assert len([r for r in caplog.records if r.levelname == "CRITICAL"]) == 0
+        
+        # 2. Make an error request (GET /items/9999 which returns 404)
+        response = client.get("/items/9999", headers={"Authorization": "Bearer fake-token"})
+        assert response.status_code == 404
+        
+        # Now we have 2 requests, 1 is 404 error. Error rate = 50% (> 10%).
+        # A CRITICAL alert log should be emitted.
+        critical_logs = [r for r in caplog.records if r.levelname == "CRITICAL"]
+        assert len(critical_logs) >= 1
+        
+        # Inspect the critical log
+        alert_record = critical_logs[0]
+        assert "High error rate detected" in alert_record.message
+        assert getattr(alert_record, "alert", None) is True
+
