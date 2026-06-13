@@ -7,7 +7,7 @@ import time
 import asyncio
 import logging
 import httpx
-from fastapi import HTTPException, Header
+from fastapi import HTTPException, Header, Request
 from circuit_breaker import CircuitBreaker
 
 # Circuit breaker instance (global — shared di seluruh app)
@@ -32,10 +32,21 @@ TIMEOUT_SECONDS = 5.0      # Timeout per request
 RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
 
 
-async def _call_auth_service(authorization: str) -> dict:
-    """
-    Internal: Panggil Auth Service dengan retry + exponential backoff.
-    """
+async def _call_auth_service(
+    authorization: str,
+    correlation_id: str = None,
+) -> dict:
+    """Panggil Auth Service dengan Circuit Breaker + Retry + Correlation ID."""
+    if not auth_circuit.can_execute():
+        raise HTTPException(
+            status_code=503,
+            detail="Auth Service circuit breaker OPEN. Try again later."
+        )
+
+    headers = {"Authorization": authorization}
+    if correlation_id:
+        headers["X-Correlation-ID"] = correlation_id
+
     last_exception = None
 
     for attempt in range(1, MAX_RETRIES + 1):
@@ -43,26 +54,30 @@ async def _call_auth_service(authorization: str) -> dict:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     f"{AUTH_SERVICE_URL}/verify",
-                    headers={"Authorization": authorization},
+                    headers=headers,
                     timeout=TIMEOUT_SECONDS,
                 )
 
-            # Success
             if response.status_code == 200:
-                logger.info(f"Auth verified (attempt {attempt})")
+                auth_circuit.record_success()
+                logger.info(
+                    f"Auth verified (attempt {attempt})",
+                    extra={"correlation_id": correlation_id},
+                )
                 return response.json()
 
-            # Non-retryable errors — gagalkan langsung
             if response.status_code == 401:
+                auth_circuit.record_success()
                 raise HTTPException(status_code=401, detail="Invalid or expired token")
             if response.status_code == 400:
+                auth_circuit.record_success()
                 raise HTTPException(status_code=400, detail="Bad auth request")
 
-            # Retryable server errors
             if response.status_code in RETRYABLE_STATUS_CODES:
                 logger.warning(
                     f"Auth service returned {response.status_code} "
-                    f"(attempt {attempt}/{MAX_RETRIES})"
+                    f"(attempt {attempt}/{MAX_RETRIES})",
+                    extra={"correlation_id": correlation_id},
                 )
                 last_exception = HTTPException(
                     status_code=response.status_code,
@@ -74,26 +89,25 @@ async def _call_auth_service(authorization: str) -> dict:
                     detail=f"Unexpected auth response: {response.status_code}"
                 )
 
-        except httpx.ConnectError as e:
+        except httpx.ConnectError:
             logger.warning(
-                f"Cannot connect to Auth Service (attempt {attempt}/{MAX_RETRIES}): {e}"
+                f"Cannot connect to Auth Service (attempt {attempt}/{MAX_RETRIES})",
+                extra={"correlation_id": correlation_id},
             )
-            last_exception = e
+            last_exception = HTTPException(status_code=503, detail="Auth unavailable")
 
-        except httpx.TimeoutException as e:
+        except httpx.TimeoutException:
             logger.warning(
-                f"Auth Service timeout (attempt {attempt}/{MAX_RETRIES}): {e}"
+                f"Auth Service timeout (attempt {attempt}/{MAX_RETRIES})",
+                extra={"correlation_id": correlation_id},
             )
-            last_exception = e
+            last_exception = HTTPException(status_code=504, detail="Auth timeout")
 
-        # Exponential backoff (hanya jika akan retry)
         if attempt < MAX_RETRIES:
-            delay = BASE_DELAY * (2 ** (attempt - 1))  # 0.5s, 1s, 2s
-            logger.info(f"Retrying in {delay}s...")
+            delay = BASE_DELAY * (2 ** (attempt - 1))
             await asyncio.sleep(delay)
 
-    # Semua retry gagal
-    logger.error(f"Auth Service unreachable after {MAX_RETRIES} attempts")
+    auth_circuit.record_failure()
     raise HTTPException(
         status_code=503,
         detail="Auth Service unavailable. Please try again later."
@@ -101,13 +115,12 @@ async def _call_auth_service(authorization: str) -> dict:
 
 
 async def verify_token_with_auth_service(
-    authorization: str = Header(...)
+    request: Request,
+    authorization: str = Header(...),
 ) -> dict:
-    """
-    FastAPI Dependency: Verifikasi token via Auth Service.
-    Dengan retry logic dan proper error handling.
-    """
+    """FastAPI Dependency: Verifikasi token dengan correlation ID."""
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
 
-    return await _call_auth_service(authorization)
+    correlation_id = getattr(request.state, "correlation_id", None)
+    return await _call_auth_service(authorization, correlation_id)
