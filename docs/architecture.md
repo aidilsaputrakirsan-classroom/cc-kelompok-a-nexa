@@ -1,8 +1,5 @@
 # Architecture Guide — Studyfy
 
-> **Mata Kuliah:** Komputasi Awan — Sistem Informasi ITK  
-> **Fase:** Microservices (Minggu 12-14)  
-
 Dokumentasi arsitektur sistem **Studyfy** — mulai dari diagram komponen, daftar services, API contract, cara menjalankan lokal, hingga cara debug per service.
 
 ---
@@ -21,7 +18,16 @@ Dokumentasi arsitektur sistem **Studyfy** — mulai dari diagram komponen, dafta
 
 ## 🏗️ Arsitektur Overview
 
-Sistem **Studyfy** menggunakan arsitektur **modular monolith** dengan domain service separation di dalam satu aplikasi backend. Setiap domain service memiliki batasan tanggung jawab yang jelas dan berkomunikasi melalui REST API.
+Sistem **Studyfy** menggunakan **dual-mode architecture**:
+
+| Mode | File | Tujuan |
+|------|------|--------|
+| **Monolith** | `docker-compose.yml` | Development — semua domain service dalam satu app backend (FastAPI) + satu database |
+| **Microservices** | `docker-compose.microservices.yml` | UAS/Production — service terpisah (auth-service, item-service) dengan database masing-masing, gateway (Nginx), monitoring (Prometheus + Grafana) |
+
+### Monolith Mode (Development)
+
+Arsitektur **modular monolith** dengan domain service separation di dalam satu aplikasi backend. Setiap domain service memiliki batasan tanggung jawab yang jelas dan berkomunikasi melalui REST API.
 
 ### Service Boundary
 
@@ -168,6 +174,103 @@ sequenceDiagram
     end
 ```
 
+### Microservices Cluster Architecture (UAS / Production)
+
+```mermaid
+flowchart TB
+    subgraph EXTERNAL["🔓 External"]
+        USER["👤 User"]
+        BROWSER["🖥️ Browser"]
+    end
+
+    subgraph GW["🚪 Gateway Layer"]
+        NGINX["⚡ Nginx Gateway<br/>Port 8080"]
+    end
+
+    subgraph MS["🔧 Microservices"]
+        AUTH["🔐 Auth Service<br/>Port 8001"]
+        ITEM["📦 Item Service<br/>Port 8002"]
+    end
+
+    subgraph DB["🗄️ Databases"]
+        AUTH_DB[("auth-db<br/>PostgreSQL 16")]
+        ITEM_DB[("item-db<br/>PostgreSQL 16")]
+    end
+
+    subgraph MON["📊 Monitoring"]
+        PROM["📈 Prometheus<br/>Port 9090"]
+        GRAFANA["📉 Grafana<br/>Port 3002"]
+    end
+
+    subgraph FE["🎨 Frontend"]
+        REACT["React SPA<br/>Port 3000"]
+    end
+
+    USER --> BROWSER
+    BROWSER -->|"HTTP 8080"| NGINX
+    NGINX -->|"/auth/*"| AUTH
+    NGINX -->|"/items"| ITEM
+    NGINX -->|"/"| REACT
+    NGINX -->|"/health"| NGINX
+    
+    AUTH --> AUTH_DB
+    ITEM --> ITEM_DB
+    
+    ITEM -.->|"verify token"| AUTH
+    
+    PROM -->|"scrape /metrics"| AUTH
+    PROM -->|"scrape /metrics"| ITEM
+    GRAFANA -->|"query"| PROM
+```
+
+### Request Flow with Circuit Breaker
+
+```mermaid
+sequenceDiagram
+    participant C as 🌐 Client
+    participant G as 🚪 Gateway :8080
+    participant I as 📦 Item Service :8002
+    participant A as 🔐 Auth Service :8001
+    participant CB as ⚡ Circuit Breaker
+
+    C->>G: GET /items (Authorization: Bearer token)
+    G->>I: Proxy request
+    
+    Note over I,CB: Cek circuit breaker state
+    alt CB == OPEN
+        I->>CB: can_execute()?
+        CB-->>I: false (fail fast)
+        I-->>C: 503 Service Unavailable
+    else CB == CLOSED or HALF_OPEN
+        I->>CB: can_execute()?
+        CB-->>I: true
+        
+        loop Retry 3x (exponential backoff)
+            I->>A: GET /verify (Authorization)
+            
+            alt Auth Service OK
+                A-->>I: 200 OK (user payload)
+                I->>CB: record_success()
+                I-->>C: 200 OK (items data)
+            else Auth Service Error (5xx / timeout / connect error)
+                A-->>I: Error
+                Note over I: Retry dengan delay: 0.5s, 1s, 2s
+            end
+        end
+        
+        Note over I,CB: Semua retry gagal
+        I->>CB: record_failure()
+        Note over CB: failure_count++
+        
+        alt failure_count >= 5
+            CB-->>CB: State: CLOSED → OPEN
+            Note over CB: Cooldown 30 detik
+        end
+        
+        I-->>C: 503 Auth Service unavailable
+    end
+```
+
 ---
 
 ## 🖥️ Daftar Services & Ports
@@ -178,13 +281,51 @@ sequenceDiagram
 | **Backend API** | FastAPI + Uvicorn | `studyfy-backend` | `8000` | `8000` | studyfy-network |
 | **Database** | PostgreSQL 16 Alpine | `studyfy-db` | `5433` | `5432` | studyfy-network |
 
+### Microservices Mode — Services & Ports
+
+| Service | Teknologi | Container Name | Port (Host) | Port (Container) | Network |
+|---------|-----------|----------------|-------------|------------------|---------|
+| **Gateway** | Nginx Alpine | `studyfy-nginx-gateway` | `8080` | `80` | studyfy-mesh |
+| **Auth Service** | FastAPI | `studyfy-auth-service` | `8001` | `8001` | studyfy-mesh |
+| **Item Service** | FastAPI | `studyfy-item-service` | `8002` | `8002` | studyfy-mesh |
+| **Auth DB** | PostgreSQL 16 Alpine | `studyfy-auth-db` | - | `5432` | studyfy-mesh |
+| **Item DB** | PostgreSQL 16 Alpine | `studyfy-item-db` | - | `5432` | studyfy-mesh |
+| **Frontend** | React + Vite + Nginx | `studyfy-frontend` | - | `80` | studyfy-mesh |
+| **Prometheus** | Prometheus v2.45.0 | `studyfy-prometheus` | `9090` | `9090` | studyfy-mesh |
+| **Grafana** | Grafana latest | `studyfy-grafana` | `3002` | `3000` | studyfy-mesh |
+
+### Gateway Routes
+
+| Path | Target | Description |
+|------|--------|-------------|
+| `/auth/*` | auth-service:8001 | Auth endpoints (register, login, verify) |
+| `/items` | item-service:8002/items | Item CRUD |
+| `/health` | Static response | Health check aggregator — selalu `200` |
+| `/` | frontend:3000 | React SPA |
+
+**File:** `services/gateway/nginx.conf`
+
 ### Akses Aplikasi
+
+#### Monolith Mode
 
 | Service | URL (Lokal) | URL (Docker) |
 |---------|-------------|--------------|
 | Frontend | `http://localhost:3000` | `http://frontend:80` |
 | Backend API | `http://localhost:8000` | `http://backend:8000` |
 | PostgreSQL | `localhost:5433` | `db:5432` |
+
+#### Microservices Mode
+
+| Service | URL (Lokal) | URL (Docker) |
+|---------|-------------|--------------|
+| Frontend (via Gateway) | `http://localhost:8080` | `http://gateway:80` |
+| Auth Service (langsung) | `http://localhost:8001` | `http://auth-service:8001` |
+| Item Service (langsung) | `http://localhost:8002` | `http://item-service:8002` |
+| Prometheus | `http://localhost:9090` | `http://prometheus:9090` |
+| Grafana | `http://localhost:3002` | `http://grafana:3000` |
+| Auth DB | `localhost:5433` (auth-db) | `auth-db:5432` |
+| Item DB | `localhost:5434` (item-db) | `item-db:5432` |
 
 ---
 
@@ -354,6 +495,81 @@ sequenceDiagram
 - `limit` (int, default 20) — items per page
 - `search` (string, optional) — search by name
 - `category` (string, optional) — filter by category
+
+---
+
+### 9. Auth Service (Microservices) — Port 8001
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| POST | `/register` | ❌ | Registrasi user baru |
+| POST | `/login` | ❌ | Login, dapatkan JWT token |
+| GET | `/verify` | ✅ (Header) | Verifikasi token — dipanggil service lain |
+| GET | `/health` | ❌ | Health check |
+| GET | `/metrics` | ❌ | Metrics endpoint (Prometheus) |
+
+**File:** `services/auth-service/main.py`
+
+**Example Verify Response (200 OK):**
+```json
+{
+  "user_id": 1,
+  "email": "user@example.com",
+  "name": "Nama Lengkap"
+}
+```
+
+### 10. Item Service (Microservices) — Port 8002
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| POST | `/items` | ✅ | Buat item baru |
+| GET | `/items` | ✅ | List items (search filter) |
+| GET | `/items/stats` | ✅ | Statistik items |
+| GET | `/items/{item_id}` | ✅ | Detail item |
+| PUT | `/items/{item_id}` | ✅ | Update item |
+| DELETE | `/items/{item_id}` | ✅ | Hapus item |
+| GET | `/health` | ❌ | Health check (termasuk CB status) |
+| GET | `/metrics` | ❌ | Metrics endpoint (Prometheus) |
+
+**File:** `services/item-service/main.py`
+
+**Query Parameters (GET /items):**
+- `search` (string, optional) — search by name
+- `skip` (int, default 0) — offset
+- `limit` (int, default 20) — max items
+
+**Health Check Response (normal):**
+```json
+{
+  "status": "healthy",
+  "service": "item-service",
+  "version": "2.1.0",
+  "dependencies": {
+    "auth-service": {
+      "state": "CLOSED",
+      "failure_count": 0,
+      "total_rejected": 0
+    }
+  }
+}
+```
+
+**Health Check Response (auth-service down):**
+```json
+{
+  "status": "degraded",
+  "service": "item-service",
+  "version": "2.1.0",
+  "dependencies": {
+    "auth-service": {
+      "state": "OPEN",
+      "failure_count": 5,
+      "total_rejected": 3
+    }
+  }
+}
+```
 
 ---
 
@@ -541,7 +757,47 @@ Cek health:
 curl http://localhost:8000/health
 ```
 
-### Opsi 2: Manual (Tanpa Docker)
+### Opsi 2: Microservices Mode (Docker Compose)
+
+Menjalankan full microservices cluster (UAS/Production):
+```bash
+docker compose -f docker-compose.microservices.yml up -d --build
+```
+
+Verifikasi semua services berjalan:
+```bash
+docker compose -f docker-compose.microservices.yml ps
+```
+
+Output:
+```
+NAME                    SERVICE             STATUS          PORTS
+studyfy-auth-db         auth-db             running          5432/tcp
+studyfy-item-db         item-db             running          5432/tcp
+studyfy-auth-service    auth-service        running          8001/tcp
+studyfy-item-service    item-service        running          8002/tcp
+studyfy-nginx-gateway   gateway             running          0.0.0.0:8080->80/tcp
+studyfy-frontend        frontend            running          80/tcp
+studyfy-prometheus      prometheus          running          0.0.0.0:9090->9090/tcp
+studyfy-grafana         grafana             running          0.0.0.0:3002->3000/tcp
+```
+
+Cek health via gateway:
+```bash
+curl http://localhost:8080/health
+curl http://localhost:8080/auth/health
+curl http://localhost:8080/items
+```
+
+### Opsi 3: Production Mode
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Production mode mirip microservices tapi tanpa monitoring (Prometheus/Grafana), port gateway di `80`.
+
+### Opsi 4: Manual (Tanpa Docker)
 
 **1. Database**
 ```bash
@@ -566,13 +822,40 @@ npm install
 npm run dev
 ```
 
+### Makefile Commands
+
+| Command | Deskripsi |
+|---------|-----------|
+| `make up` | Start semua services (monolith + microservices + dev) |
+| `make build` | Start dengan rebuild |
+| `make dev` | Development mode (hot-reload) |
+| `make prod` | Production mode (`docker-compose.prod.yml`) |
+| `make down` | Stop & remove containers |
+| `make clean` | Stop + remove containers + hapus volumes |
+| `make restart` | Restart semua services |
+| `make logs` | Lihat logs (format warna) |
+| `make logs-backend` | Lihat logs auth-service + item-service |
+| `make ps` | Status containers |
+| `make shell-auth` | Masuk terminal auth-service |
+| `make shell-item` | Masuk terminal item-service |
+| `make shell-db` | Masuk PostgreSQL auth-db |
+| `make test` | Jalankan pytest + vitest |
+| `make lint` | Jalankan linter |
+| `make pr-check` | Lint + test + build (sebelum PR) |
+
 ### Stop Services
 ```bash
-# Docker
+# Monolith
 docker compose down
 
-# Manual
-# Ctrl+C di terminal masing-masing
+# Microservices
+docker compose -f docker-compose.microservices.yml down
+
+# Production
+docker compose -f docker-compose.prod.yml down
+
+# Semua mode (Makefile)
+make down
 ```
 
 ### Lihat Logs
@@ -680,6 +963,55 @@ docker compose exec db pg_dump -U postgres studyfy > backup.sql
 
 # Restore
 cat backup.sql | docker compose exec -T db psql -U postgres studyfy
+```
+
+### Microservices Debug
+
+**1. Cek circuit breaker state**
+```bash
+curl http://localhost:8002/health | python -m json.tool
+# Lihat field: dependencies.auth-service.state
+```
+
+**2. Cek metrics item-service**
+```bash
+curl http://localhost:8002/metrics | python -m json.tool
+```
+
+**3. Cek log auth-service dengan filter**
+```bash
+docker compose -f docker-compose.microservices.yml logs auth-service --tail 50
+```
+
+**4. Simulasi failure (trigger circuit breaker)**
+```bash
+# Stop auth-service
+docker compose -f docker-compose.microservices.yml stop auth-service
+
+# Kirim request sampai CB trip
+for ($i=1; $i -le 6; $i++) {
+    curl -s -H "Authorization: Bearer test" http://localhost:8002/items
+    Start-Sleep -Milliseconds 500
+}
+
+# Cek state CB
+curl -s http://localhost:8002/health | ConvertFrom-Json | Select-Object -ExpandProperty dependencies
+
+# Start kembali
+docker compose -f docker-compose.microservices.yml start auth-service
+```
+
+**5. Akses Prometheus**
+```bash
+start http://localhost:9090
+# Query: rate(request_count[1m])
+```
+
+**6. Akses Grafana**
+```bash
+start http://localhost:3002
+# Login: admin / admin
+# Add Prometheus data source: http://prometheus:9090
 ```
 
 ### Docker Network Debug
