@@ -1,5 +1,5 @@
 # ============================================================
-# Docker Compose — Cloud App
+# Docker Compose — Studyfy (Development)
 # Komputasi Awan — SI ITK
 # ============================================================
 # Usage:
@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD: 1
       POSTGRES_DB: studyfy
     ports:
       - "5433:5432"
@@ -39,8 +39,19 @@ services:
       dockerfile: Dockerfile
     container_name: studyfy-backend
     restart: unless-stopped
-    env_file:
-      - ./backend/.env.docker
+    environment:
+      APP_NAME: ${APP_NAME:-Studyfy}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-True}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres123@db:5432/studyfy}
+      SECRET_KEY: ${SECRET_KEY:-studyfy-super-secret-dev-key}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-True}
+      CORS_ALLOW_METHODS: "*"
+      CORS_ALLOW_HEADERS: "*"
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
     ports:
       - "8000:8000"
     networks:

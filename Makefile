@@ -1,58 +1,87 @@
-.PHONY: up down build logs ps clean restart
+.PHONY: up down build logs ps clean restart shell-auth shell-item shell-db shell-frontend lint test pr-check dev
 
-# Start semua services
+# ---------------------------------------------------------
+# VARIABEL: Kunci utama agar Docker membaca semua file
+# ---------------------------------------------------------
+COMPOSE_CMD=docker compose -f docker-compose.yml -f docker-compose.microservices.yml -f docker-compose.dev.yml
+
+# Start semua services di background
 up:
-	docker compose up -d
+	$(COMPOSE_CMD) up -d
 
-# Start dengan rebuild
+# Start dengan rebuild (Gunakan ini kalau ada kodingan baru)
 build:
-	docker compose up --build -d
+	$(COMPOSE_CMD) up --build -d
 
-# Stop & remove containers
+# Shortcut untuk development (Hot-Reload)
+dev:
+	$(COMPOSE_CMD) up --build
+
+# Menjalankan versi production (Tanpa hot-reload, port tertutup dan lebih stabil)
+prod:
+	docker compose -f docker-compose.prod.yml up -d --build
+
+# Stop & remove containers (Data aman)
 down:
-	docker compose down
+	$(COMPOSE_CMD) down
 
-# Stop, remove, DAN hapus volumes (⚠️ data hilang!)
+# Stop, remove, DAN hapus volumes (⚠️ AWAS: Seluruh data database hilang!)
 clean:
-	docker compose down -v
+	$(COMPOSE_CMD) down -v
 	docker system prune -f
 
-# Restart semua
+# Restart semua services (Gunakan ini kalau ada perubahan konfigurasi atau ingin refresh cepat)
 restart:
-	docker compose restart
+	$(COMPOSE_CMD) restart
 
-# Lihat logs (semua services)
+# Lihat logs menggunakan Helper Script untuk format yang lebih baik (Semua services, dengan filter warna-warni)
 logs:
-	docker compose logs -f
+	bash ./scripts/logs.sh all
 
-# Lihat logs backend saja
+# Lihat logs bawaan secara real-time (semua services, tanpa filter)
+logs-raw:
+	$(COMPOSE_CMD) logs -f
+
+# Lihat logs khusus backend saja (Auth & Item)
 logs-backend:
-	docker compose logs -f backend
+	$(COMPOSE_CMD) logs -f auth-service item-service
 
-# Lihat status
+# Lihat status container yang sedang berjalan
 ps:
-	docker compose ps
+	$(COMPOSE_CMD) ps
 
-# Masuk ke backend shell
-shell-backend:
-	docker compose exec backend bash
+# Masuk ke terminal Auth Service
+shell-auth:
+	$(COMPOSE_CMD) exec auth-service bash
 
-# Masuk ke database
+# Masuk ke terminal Item Service
+shell-item:
+	$(COMPOSE_CMD) exec item-service bash
+
+# Masuk ke dalam PostgreSQL database (Auth DB)
 shell-db:
-	docker compose exec db psql -U postgres -d studyfy
+	$(COMPOSE_CMD) exec auth-db psql -U postgres -d safespace
+
+# Masuk ke terminal frontend
+shell-frontend:
+	$(COMPOSE_CMD) exec frontend sh
 
 # Jalankan linter untuk mengecek kerapian kode
 lint:
 	@echo "Menjalankan linter..."
-	# Nanti diisi dengan perintah linter (misal: flake8 / eslint)
+	cd frontend && npm run lint
 
 # Jalankan unit test
 test:
-	@echo "Menjalankan unit tests..."
-	# Nanti diisi dengan perintah test (misal: pytest)
+	@echo "Menjalankan unit tests Backend (Pytest)..."
+	cd backend && pytest
+	@echo "Menjalankan unit tests Frontend (Vitest)..."
+	cd frontend && npm test
 
 # Cek kesiapan kodingan sebelum di-merge (PR Check)
 pr-check:
-	@echo "Menjalankan PR checks (Build & Test)..."
-	make build
+	@echo "Menjalankan PR checks lokal (Lint, Build & Test)..."
+	make lint
 	make test
+	make build
+	@echo "✅ Semua check lokal berhasil! Kodingan aman untuk di-push dan di-PR."

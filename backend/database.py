@@ -1,20 +1,16 @@
-import os
-from dotenv import load_dotenv
+from config import settings
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Load environment variables dari .env
-load_dotenv()
-
-# Ambil DATABASE_URL dari environment
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL tidak ditemukan di .env!")
+# Ambil DATABASE_URL dari environment / config settings
+DATABASE_URL = settings.DATABASE_URL
 
 # Buat engine (koneksi ke database)
-engine = create_engine(DATABASE_URL)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
 
 # Buat session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

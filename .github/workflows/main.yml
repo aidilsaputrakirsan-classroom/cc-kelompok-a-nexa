@@ -1,11 +1,11 @@
 name: CI Pipeline
 
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main, develop ]
 
-# LANGKAH: Concurrency Group
-# Ini akan membatalkan (cancel) proses CI yang sedang berjalan jika ada push baru di PR yang sama.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -13,21 +13,38 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # LANGKAH: Timeout per Job
-    # Default GitHub adalah 360 menit. Kita batasi jadi 10 menit agar tidak "nyangkut".
     timeout-minutes: 10
     
+    # PERBAIKAN 1: Pindahkan lokasi kerja bot khusus untuk job ini ke folder frontend
+    defaults:
+      run:
+        working-directory: ./frontend
+        
     steps:
       - uses: actions/checkout@v4
       
-      - name: Run Tests
-        run: npm test # atau command test Anda
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  # LANGKAH: Notifikasi jika Gagal
+      # PERBAIKAN 2: Wajib install dependencies sebelum testing agar Vitest bisa berjalan
+      - name: Install Dependencies
+        run: npm install
+
+      # PERBAIKAN 3: Jalankan test (sekarang bot sudah berada di folder frontend)
+      - name: Run Tests
+        run: npm test
+
   notify-failure:
     needs: test
     if: failure()
     runs-on: ubuntu-latest
+    
+    # PERBAIKAN 4: Izin bot untuk menulis komentar
+    permissions:
+      pull-requests: write
+      
     steps:
       - name: Post PR Comment
         uses: mshick/add-pr-comment@v2
@@ -35,3 +52,26 @@ jobs:
           message: |
             ❌ **CI Pipeline Gagal!**
             Cek detail log di: [GitHub Actions Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  deploy:
+    name: 🚀 Deploy to Render
+    runs-on: ubuntu-latest
+    needs: test  
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: 🏥 Health check
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+          
+          HEALTH_URL="https://studyfy-db.onrender.com/health"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL)
+          
+          if [ "$HTTP_STATUS" == "200" ]; then
+            echo "✅ Health check passed! (HTTP $HTTP_STATUS)"
+          else
+            echo "❌ Health check FAILED! (HTTP $HTTP_STATUS)"
+            echo "Check Render dashboard for logs."
+            exit 1
+          fi
