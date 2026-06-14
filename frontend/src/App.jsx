@@ -17,6 +17,7 @@ function App() {
   // ==================== AUTH STATE ====================
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authDown, setAuthDown] = useState(false)
 
   // ==================== APP STATE ====================
   const [activeTab, setActiveTab] = useState("beranda")
@@ -45,6 +46,7 @@ function App() {
   // --- Classes State ---
   const [classes, setClasses] = useState([])
   const [loadingClasses, setLoadingClasses] = useState(false)
+  const [classesError, setClassesError] = useState(null)
   const [editingClass, setEditingClass] = useState(null)
   const [selectedClass, setSelectedClass] = useState(null)
   const [filters, setFilters] = useState({ semester: "", instructor_id: "" })
@@ -52,6 +54,7 @@ function App() {
   // ==================== LOAD DATA ====================
   const loadClasses = useCallback(async () => {
     setLoadingClasses(true)
+    setClassesError(null)
     try {
       const params = {}
       if (filters.semester) params.semester = filters.semester
@@ -62,6 +65,11 @@ function App() {
       setClasses(data.classes)
     } catch (err) {
       if (err.message === "UNAUTHORIZED") handleLogout()
+      else if (err.message === "Service temporarily unavailable") {
+        setClassesError("Layanan tidak tersedia. Silakan coba lagi nanti.")
+      } else {
+        setClassesError("Gagal memuat kelas.")
+      }
       console.error("Error loading classes:", err)
     } finally {
       setLoadingClasses(false)
@@ -75,7 +83,14 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       loadClasses()
-      getMe().then(data => setUser(data)).catch(() => {})
+      getMe().then(data => {
+        setUser(data)
+        setAuthDown(false)
+      }).catch((err) => {
+        if (err.message === "Service temporarily unavailable") {
+          setAuthDown(true)
+        }
+      })
     }
   }, [isAuthenticated, loadClasses])
 
@@ -171,6 +186,13 @@ function App() {
         onToggleDarkMode={toggleDarkMode}
       />
 
+      {authDown && (
+        <div className="fixed top-16 left-64 right-0 z-40 bg-amber-500 text-amber-950 px-4 py-2 text-center font-bold shadow-sm flex items-center justify-center gap-2">
+          <span className="material-symbols-outlined text-xl">warning</span>
+          Some features temporarily unavailable
+        </div>
+      )}
+
       {isProfileOpen && (
         <UserProfileModal
           user={user}
@@ -205,17 +227,32 @@ function App() {
                     currentUser={user}
                   />
                 )}
-                <ClassList
-                  classes={classes}
-                  loading={loadingClasses}
-                  currentUser={user}
-                  filters={filters}
-                  onFilterChange={setFilters}
-                  onSelect={setSelectedClass}
-                  onEdit={(cls) => { setEditingClass(cls); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  onDelete={handleClassDelete}
-                  onArchive={handleClassArchive}
-                />
+                {classesError ? (
+                  <div className="flex flex-col items-center justify-center py-20 px-4 bg-surface-container-lowest dark:bg-[#1a1928] rounded-xl border border-red-200 dark:border-red-900/30 text-center mt-4">
+                    <span className="material-symbols-outlined text-6xl text-red-500 mb-4">cloud_off</span>
+                    <h3 className="text-xl font-bold text-on-surface dark:text-white mb-2">Oops, Terjadi Kesalahan</h3>
+                    <p className="text-on-surface-variant dark:text-slate-400 mb-8 max-w-md">{classesError}</p>
+                    <button
+                      onClick={loadClasses}
+                      className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-sm">refresh</span>
+                      Coba Lagi
+                    </button>
+                  </div>
+                ) : (
+                  <ClassList
+                    classes={classes}
+                    loading={loadingClasses}
+                    currentUser={user}
+                    filters={filters}
+                    onFilterChange={setFilters}
+                    onSelect={setSelectedClass}
+                    onEdit={(cls) => { setEditingClass(cls); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onDelete={handleClassDelete}
+                    onArchive={handleClassArchive}
+                  />
+                )}
               </>
             )}
           </div>
@@ -228,19 +265,34 @@ function App() {
               <span className="material-symbols-outlined text-primary">inventory_2</span>
               Arsip Kelas
             </h2>
-            <ClassList
-              classes={classes}
-              loading={loadingClasses}
-              currentUser={user}
-              filters={filters}
-              onFilterChange={setFilters}
-              onSelect={setSelectedClass}
-              onEdit={(cls) => { setEditingClass(cls); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              onDelete={handleClassDelete}
-              onArchive={handleClassArchive}
-              onUnarchive={handleClassUnarchive}
-              isArchivePage={true}
-            />
+            {classesError ? (
+              <div className="flex flex-col items-center justify-center py-20 px-4 bg-surface-container-lowest dark:bg-[#1a1928] rounded-xl border border-red-200 dark:border-red-900/30 text-center mt-4">
+                <span className="material-symbols-outlined text-6xl text-red-500 mb-4">cloud_off</span>
+                <h3 className="text-xl font-bold text-on-surface dark:text-white mb-2">Oops, Terjadi Kesalahan</h3>
+                <p className="text-on-surface-variant dark:text-slate-400 mb-8 max-w-md">{classesError}</p>
+                <button
+                  onClick={loadClasses}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-sm">refresh</span>
+                  Coba Lagi
+                </button>
+              </div>
+            ) : (
+              <ClassList
+                classes={classes}
+                loading={loadingClasses}
+                currentUser={user}
+                filters={filters}
+                onFilterChange={setFilters}
+                onSelect={setSelectedClass}
+                onEdit={(cls) => { setEditingClass(cls); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                onDelete={handleClassDelete}
+                onArchive={handleClassArchive}
+                onUnarchive={handleClassUnarchive}
+                isArchivePage={true}
+              />
+            )}
           </div>
         )}
 
