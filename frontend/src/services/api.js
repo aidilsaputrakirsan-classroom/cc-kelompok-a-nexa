@@ -385,3 +385,60 @@ export async function checkHealth() {
     return false
   }
 }
+
+// ==================== SYSTEM METRICS API ====================
+
+export async function fetchGatewayHealth() {
+  try {
+    const response = await fetch(`${API_URL}/health`);
+    if (!response.ok) throw new Error("Gateway degraded");
+    const data = await response.json();
+    return {
+      status: "healthy",
+      data: data
+    };
+  } catch (error) {
+    return {
+      status: "unreachable",
+      error: error.message
+    };
+  }
+}
+
+export async function fetchAuthMetrics() {
+  try {
+    // Gateway routes to auth-service
+    const response = await fetch(`${API_URL}/auth/metrics`);
+    if (!response.ok) throw new Error("Service degraded");
+    const data = await response.json();
+    return {
+      status: "healthy",
+      data: data
+    };
+  } catch (error) {
+    return {
+      status: "unreachable",
+      error: error.message
+    };
+  }
+}
+
+export async function fetchItemMetrics() {
+  try {
+    // Note: If Nginx config maps /items/metrics to item-service /items/metrics, 
+    // it depends on the gateway routing. 
+    // The instructions say "endpoint /auth/metrics, /items/metrics, dan /items/health"
+    const response = await fetch(`${API_URL}/items/metrics`);
+    if (!response.ok) throw new Error("Service degraded");
+    const data = await response.json();
+    return {
+      status: "healthy",
+      data: data
+    };
+  } catch (error) {
+    return {
+      status: "unreachable",
+      error: error.message
+    };
+  }
+}

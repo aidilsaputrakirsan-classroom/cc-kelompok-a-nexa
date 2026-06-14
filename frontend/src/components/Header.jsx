@@ -75,6 +75,14 @@ function Header({ isConnected, user, onLogout, onOpenProfile, activeTab, onTabCh
             <span className="material-symbols-outlined">info</span>
             <span>About</span>
           </button>
+          
+          <a
+            href="/status"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ease-in-out font-bold text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-white/5"
+          >
+            <span className="material-symbols-outlined">monitoring</span>
+            <span>System Status</span>
+          </a>
         </nav>
 
         <div className="pt-4 border-t border-outline-variant/10 dark:border-white/5 space-y-1">

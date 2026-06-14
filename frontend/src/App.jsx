@@ -12,8 +12,13 @@ import {
   fetchClasses, createClass, updateClass, deleteClass, archiveClass, unarchiveClass,
   checkHealth, login, register, clearToken, getMe
 } from "./services/api"
+import StatusPage from "./pages/StatusPage"
 
 function App() {
+  if (window.location.pathname === '/status') {
+    return <StatusPage />;
+  }
+
   // ==================== AUTH STATE ====================
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
