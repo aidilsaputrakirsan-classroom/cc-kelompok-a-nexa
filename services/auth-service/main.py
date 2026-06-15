@@ -91,6 +91,8 @@ class ServiceMetrics:
 
 metrics = ServiceMetrics("auth-service")
 
+app.add_middleware(RequestLoggingMiddleware)
+
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173")
 app.add_middleware(
     CORSMiddleware,
@@ -99,9 +101,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Logging middleware (setelah CORS)
-app.add_middleware(RequestLoggingMiddleware)
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
