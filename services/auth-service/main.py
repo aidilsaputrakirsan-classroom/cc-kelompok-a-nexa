@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import jwt
 from metrics import metrics
+from collections import deque
 
 
 from database import engine, get_db, Base
