@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001';
+const ITEM_API_URL = import.meta.env.VITE_ITEM_API_URL || 'http://localhost:8002';
 
 // Centralized fetch wrapper to handle service unavailability
 const originalFetch = globalThis.fetch;
@@ -58,7 +59,7 @@ async function handleResponse(response) {
 // ==================== AUTH API ====================
 
 export async function register(userData) {
-  const response = await fetch(`${API_URL}/auth/register`, {
+  const response = await fetch(`${AUTH_API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(userData),
@@ -67,7 +68,7 @@ export async function register(userData) {
 }
 
 export async function login(data) {
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const response = await fetch(`${AUTH_API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -78,7 +79,7 @@ export async function login(data) {
 }
 
 export async function getMe() {
-  const response = await fetch(`${API_URL}/auth/me`, {
+  const response = await fetch(`${AUTH_API_URL}/auth/me`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
@@ -86,21 +87,21 @@ export async function getMe() {
 
 export async function fetchUsers(role = null) {
   const query = role ? `?role=${role}` : ""
-  const response = await fetch(`${API_URL}/users${query}`, {
+  const response = await fetch(`${AUTH_API_URL}/users${query}`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
 }
 
 export async function getTeam() {
-  const response = await fetch(`${API_URL}/team`)
+  const response = await fetch(`${ITEM_API_URL}/team`)
   return handleResponse(response)
 }
 
 // ==================== USER PROFILE ====================
 
 export async function updateProfile(profileData) {
-  const response = await fetch(`${API_URL}/users/profile`, {
+  const response = await fetch(`${AUTH_API_URL}/users/profile`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(profileData),
@@ -118,14 +119,14 @@ export async function fetchClasses(params = {}) {
   if (params.semester) query.append("semester", params.semester)
   if (params.only_archived) query.append("only_archived", params.only_archived)
 
-  const response = await fetch(`${API_URL}/classes?${query.toString()}`, {
+  const response = await fetch(`${AUTH_API_URL}/classes?${query.toString()}`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
 }
 
 export async function createClass(classData) {
-  const response = await fetch(`${API_URL}/classes`, {
+  const response = await fetch(`${AUTH_API_URL}/classes`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(classData),
@@ -134,7 +135,7 @@ export async function createClass(classData) {
 }
 
 export async function updateClass(id, classData) {
-  const response = await fetch(`${API_URL}/classes/${id}`, {
+  const response = await fetch(`${AUTH_API_URL}/classes/${id}`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(classData),
@@ -143,7 +144,7 @@ export async function updateClass(id, classData) {
 }
 
 export async function deleteClass(id) {
-  const response = await fetch(`${API_URL}/classes/${id}`, {
+  const response = await fetch(`${AUTH_API_URL}/classes/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   })
@@ -152,7 +153,7 @@ export async function deleteClass(id) {
 }
 
 export async function archiveClass(id) {
-  const response = await fetch(`${API_URL}/classes/${id}/archive`, {
+  const response = await fetch(`${AUTH_API_URL}/classes/${id}/archive`, {
     method: "PATCH",
     headers: authHeaders(),
   })
@@ -160,7 +161,7 @@ export async function archiveClass(id) {
 }
 
 export async function unarchiveClass(id) {
-  const response = await fetch(`${API_URL}/classes/${id}/unarchive`, {
+  const response = await fetch(`${AUTH_API_URL}/classes/${id}/unarchive`, {
     method: "PATCH",
     headers: authHeaders(),
   })
@@ -168,14 +169,14 @@ export async function unarchiveClass(id) {
 }
 
 export async function fetchClassStudents(classId) {
-  const response = await fetch(`${API_URL}/classes/${classId}/students`, {
+  const response = await fetch(`${AUTH_API_URL}/classes/${classId}/students`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
 }
 
 export async function addStudentToClass(classId, userId) {
-  const response = await fetch(`${API_URL}/classes/${classId}/students/${userId}`, {
+  const response = await fetch(`${AUTH_API_URL}/classes/${classId}/students/${userId}`, {
     method: "POST",
     headers: authHeaders(),
   })
@@ -183,7 +184,7 @@ export async function addStudentToClass(classId, userId) {
 }
 
 export async function removeStudentFromClass(classId, userId) {
-  const response = await fetch(`${API_URL}/classes/${classId}/students/${userId}`, {
+  const response = await fetch(`${AUTH_API_URL}/classes/${classId}/students/${userId}`, {
     method: "DELETE",
     headers: authHeaders(),
   })
@@ -192,7 +193,7 @@ export async function removeStudentFromClass(classId, userId) {
 }
 
 export async function fetchUserClasses(userId) {
-  const response = await fetch(`${API_URL}/users/${userId}/classes`, {
+  const response = await fetch(`${AUTH_API_URL}/users/${userId}/classes`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
@@ -204,14 +205,14 @@ export async function fetchMaterials(classId, params = {}) {
   const query = new URLSearchParams()
   if (params.skip !== undefined) query.append("skip", params.skip)
   if (params.limit !== undefined) query.append("limit", params.limit)
-  const response = await fetch(`${API_URL}/classes/${classId}/materials?${query.toString()}`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/materials?${query.toString()}`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
 }
 
 export async function createMaterial(classId, materialData) {
-  const response = await fetch(`${API_URL}/classes/${classId}/materials`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/materials`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(materialData),
@@ -220,7 +221,7 @@ export async function createMaterial(classId, materialData) {
 }
 
 export async function updateMaterial(classId, materialId, materialData) {
-  const response = await fetch(`${API_URL}/classes/${classId}/materials/${materialId}`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/materials/${materialId}`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(materialData),
@@ -229,7 +230,7 @@ export async function updateMaterial(classId, materialId, materialData) {
 }
 
 export async function deleteMaterial(classId, materialId) {
-  const response = await fetch(`${API_URL}/classes/${classId}/materials/${materialId}`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/materials/${materialId}`, {
     method: "DELETE",
     headers: authHeaders(),
   })
@@ -238,7 +239,7 @@ export async function deleteMaterial(classId, materialId) {
 }
 
 export async function toggleMaterialPublish(classId, materialId, isPublished) {
-  const response = await fetch(`${API_URL}/classes/${classId}/materials/${materialId}`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/materials/${materialId}`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify({ is_published: isPublished }),
@@ -252,14 +253,14 @@ export async function fetchAssignments(classId, params = {}) {
   const query = new URLSearchParams()
   if (params.skip !== undefined) query.append("skip", params.skip)
   if (params.limit !== undefined) query.append("limit", params.limit)
-  const response = await fetch(`${API_URL}/classes/${classId}/assignments?${query.toString()}`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/assignments?${query.toString()}`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
 }
 
 export async function createAssignment(classId, data) {
-  const response = await fetch(`${API_URL}/classes/${classId}/assignments`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/assignments`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(data),
@@ -268,7 +269,7 @@ export async function createAssignment(classId, data) {
 }
 
 export async function updateAssignment(classId, assignmentId, data) {
-  const response = await fetch(`${API_URL}/classes/${classId}/assignments/${assignmentId}`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/assignments/${assignmentId}`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(data),
@@ -277,7 +278,7 @@ export async function updateAssignment(classId, assignmentId, data) {
 }
 
 export async function deleteAssignment(classId, assignmentId) {
-  const response = await fetch(`${API_URL}/classes/${classId}/assignments/${assignmentId}`, {
+  const response = await fetch(`${ITEM_API_URL}/classes/${classId}/assignments/${assignmentId}`, {
     method: "DELETE",
     headers: authHeaders(),
   })
@@ -293,7 +294,7 @@ export async function submitAssignment(classId, assignmentId, file) {
   const headers = {}
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`
   const response = await fetch(
-    `${API_URL}/classes/${classId}/assignments/${assignmentId}/submissions`,
+    `${ITEM_API_URL}/classes/${classId}/assignments/${assignmentId}/submissions`,
     { method: "POST", headers, body: formData }
   )
   return handleResponse(response)
@@ -301,7 +302,7 @@ export async function submitAssignment(classId, assignmentId, file) {
 
 export async function getMySubmission(classId, assignmentId) {
   const response = await fetch(
-    `${API_URL}/classes/${classId}/assignments/${assignmentId}/my-submission`,
+    `${ITEM_API_URL}/classes/${classId}/assignments/${assignmentId}/my-submission`,
     { headers: authHeaders() }
   )
   return handleResponse(response)
@@ -312,14 +313,14 @@ export async function listSubmissions(classId, assignmentId, params = {}) {
   if (params.skip !== undefined) query.append("skip", params.skip)
   if (params.limit !== undefined) query.append("limit", params.limit)
   const response = await fetch(
-    `${API_URL}/classes/${classId}/assignments/${assignmentId}/submissions?${query.toString()}`,
+    `${ITEM_API_URL}/classes/${classId}/assignments/${assignmentId}/submissions?${query.toString()}`,
     { headers: authHeaders() }
   )
   return handleResponse(response)
 }
 
 export async function returnSubmission(submissionId) {
-  const response = await fetch(`${API_URL}/submissions/${submissionId}/return`, {
+  const response = await fetch(`${ITEM_API_URL}/submissions/${submissionId}/return`, {
     method: "DELETE",
     headers: authHeaders(),
   })
@@ -330,7 +331,7 @@ export async function returnSubmission(submissionId) {
 // ==================== GRADING API ====================
 
 export async function submitGrade(submissionId, score) {
-  const response = await fetch(`${API_URL}/submissions/${submissionId}/grade`, {
+  const response = await fetch(`${ITEM_API_URL}/submissions/${submissionId}/grade`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ score }),
@@ -339,7 +340,7 @@ export async function submitGrade(submissionId, score) {
 }
 
 export async function getSubmissionGrade(submissionId) {
-  const response = await fetch(`${API_URL}/submissions/${submissionId}/grade`, {
+  const response = await fetch(`${ITEM_API_URL}/submissions/${submissionId}/grade`, {
     headers: authHeaders(),
   })
   return handleResponse(response)
@@ -352,33 +353,33 @@ export async function fetchItems(search = "", skip = 0, limit = 20) {
   if (search) params.append("search", search)
   params.append("skip", skip)
   params.append("limit", limit)
-  const response = await fetch(`${API_URL}/items?${params}`, { headers: authHeaders() })
+  const response = await fetch(`${ITEM_API_URL}/items?${params}`, { headers: authHeaders() })
   return handleResponse(response)
 }
 
 export async function getStats() {
-  const response = await fetch(`${API_URL}/items/stats`, { headers: authHeaders() })
+  const response = await fetch(`${ITEM_API_URL}/items/stats`, { headers: authHeaders() })
   return handleResponse(response)
 }
 
 export async function createItem(itemData) {
-  const response = await fetch(`${API_URL}/items`, { method: "POST", headers: authHeaders(), body: JSON.stringify(itemData) })
+  const response = await fetch(`${ITEM_API_URL}/items`, { method: "POST", headers: authHeaders(), body: JSON.stringify(itemData) })
   return handleResponse(response)
 }
 
 export async function updateItem(id, itemData) {
-  const response = await fetch(`${API_URL}/items/${id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(itemData) })
+  const response = await fetch(`${ITEM_API_URL}/items/${id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(itemData) })
   return handleResponse(response)
 }
 
 export async function deleteItem(id) {
-  const response = await fetch(`${API_URL}/items/${id}`, { method: "DELETE", headers: authHeaders() })
+  const response = await fetch(`${ITEM_API_URL}/items/${id}`, { method: "DELETE", headers: authHeaders() })
   return handleResponse(response)
 }
 
 export async function checkHealth() {
   try {
-    const response = await fetch(`${API_URL}/health`)
+    const response = await fetch(`${ITEM_API_URL}/health`)
     const data = await response.json()
     return data.status === "healthy"
   } catch {

@@ -1,5 +1,8 @@
 import React, { useState } from "react"
 
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001'
+const ITEM_API_URL = import.meta.env.VITE_ITEM_API_URL || 'http://localhost:8002'
+
 function LoginPage({ onLogin, onRegister }) {
   const [isRegister, setIsRegister] = useState(false)
   const [formData, setFormData] = useState({ email: "", password: "", name: "", role: "mahasiswa" })
