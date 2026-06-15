@@ -13,6 +13,9 @@ import {
   checkHealth, login, register, clearToken, getMe
 } from "./services/api"
 
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001'
+const ITEM_API_URL = import.meta.env.VITE_ITEM_API_URL || 'http://localhost:8002'
+
 function App() {
   // ==================== AUTH STATE ====================
   const [user, setUser] = useState(null)

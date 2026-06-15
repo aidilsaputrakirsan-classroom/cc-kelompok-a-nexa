@@ -1,4 +1,4 @@
-FROM node:18-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -12,10 +12,11 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Set API URL untuk production build
-# Ini akan di-embed ke dalam bundle JavaScript
-ARG VITE_API_URL=http://localhost:8000
-ENV VITE_API_URL=$VITE_API_URL
+# Set API URL untuk microservices (bisa di-override saat runtime)
+ARG VITE_AUTH_API_URL
+ARG VITE_ITEM_API_URL
+ENV VITE_AUTH_API_URL=$VITE_AUTH_API_URL
+ENV VITE_ITEM_API_URL=$VITE_ITEM_API_URL
 
 # Build React app → output di /app/dist/
 RUN npm run build
