@@ -19,7 +19,7 @@ auth_circuit = CircuitBreaker(
 
 logger = logging.getLogger(__name__)
 
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001")
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8001")
 
 # =====================
 # RETRY CONFIG

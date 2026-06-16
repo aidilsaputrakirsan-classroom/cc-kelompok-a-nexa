@@ -1,66 +1,8 @@
 # ============================================================
-# Docker Compose — Studyfy Ultimate Microservices Cluster
-# Komputasi Awan — SI ITK (UAS Ready Blueprint)
-# Target Kompetensi: C20 (Environment Config) & C22 (Deployment/Resilience)
+# Docker Compose — Studyfy Microservices (Supabase Version)
 # ============================================================
-# Usage:
-#   docker compose -f docker-compose.microservices.yml up -d --build
-#   docker compose -f docker-compose.microservices.yml ps
-#   docker compose -f docker-compose.microservices.yml down
-# ============================================================
-
 services:
-  # ==================== 1. AUTH DATABASE ====================
-  auth-db:
-    image: postgres:16-alpine
-    container_name: studyfy-auth-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD:-postgres}
-      POSTGRES_DB: auth_db
-    volumes:
-      - auth_db_data:/var/lib/postgresql/data
-    networks:
-      - studyfy-mesh # Terisolasi di dalam mesh jaringan internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
 
-  # ==================== 2. ITEM DATABASE ====================
-  item-db:
-    image: postgres:16-alpine
-    container_name: studyfy-item-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${ITEM_DB_PASSWORD:-postgres}
-      POSTGRES_DB: item_db
-    volumes:
-      - item_db_data:/var/lib/postgresql/data
-    networks:
-      - studyfy-mesh
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d item_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-
-  # ==================== 3. AUTH SERVICE ====================
   auth-service:
     build:
       context: ./services/auth-service
@@ -68,33 +10,24 @@ services:
     container_name: studyfy-auth-service
     restart: unless-stopped
     environment:
-      DATABASE_URL: "postgresql://postgres:${AUTH_DB_PASSWORD:-postgres}@auth-db:5432/auth_db"
-      SECRET_KEY: ${SECRET_KEY:-studyfy-auth-secret-key-change-me}
+      # Mengambil dari .env root
+      DATABASE_URL: ${AUTH_DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
-      ENVIRONMENT: production
-    networks:
-      - studyfy-mesh
-    depends_on:
-      auth-db:
-        condition: service_healthy
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "8001:8001"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
       interval: 20s
       timeout: 10s
       retries: 3
-      start_period: 15s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3" # Mencegah storage server penuh akibat log bengkak
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
+        max-file: "3"
 
-  # ==================== 4. ITEM SERVICE ====================
   item-service:
     build:
       context: ./services/item-service
@@ -102,70 +35,54 @@ services:
     container_name: studyfy-item-service
     restart: unless-stopped
     environment:
-      DATABASE_URL: "postgresql://postgres:${ITEM_DB_PASSWORD:-postgres}@item-db:5432/item_db"
+      # Mengambil dari .env root
+      DATABASE_URL: ${ITEM_DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
       AUTH_SERVICE_URL: http://auth-service:8001
-      ENVIRONMENT: production
-    networks:
-      - studyfy-mesh
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "8002:8002"
     depends_on:
       auth-service:
-        condition: service_healthy
-      item-db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
       interval: 20s
       timeout: 10s
       retries: 3
-      start_period: 15s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
 
-  # ==================== 5. FRONTEND ====================
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: http://localhost:8080 # Menembak ke port API Gateway luar
-    container_name: studyfy-frontend
-    restart: unless-stopped
-    networks:
-      - studyfy-mesh
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
-
-  # ==================== 6. API GATEWAY (NGINX) ====================
   gateway:
     image: nginx:alpine
-    container_name: studyfy-nginx-gateway
+    container_name: studyfy-gateway
     restart: unless-stopped
     ports:
-      - "8080:80" # Satu-satunya jalur masuk luar menuju aplikasi internal
+      - "8080:80"
     volumes:
       - ./services/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    networks:
-      - studyfy-mesh
     depends_on:
       auth-service:
         condition: service_healthy
       item-service:
         condition: service_healthy
-      frontend:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_AUTH_API_URL: http://localhost:8001
+        VITE_ITEM_API_URL: http://localhost:8002
+    container_name: studyfy-frontend
+    restart: unless-stopped
+    depends_on:
+      gateway:
         condition: service_started
 
-  # ==================== 7. PROMETHEUS (MONITORING) ====================
   prometheus:
     image: prom/prometheus:v2.45.0
     container_name: studyfy-prometheus
@@ -173,38 +90,18 @@ services:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-    networks:
-      - studyfy-mesh
     depends_on:
       - auth-service
       - item-service
 
-  # ==================== 8. GRAFANA (METRICS DASHBOARD) ====================
   grafana:
     image: grafana/grafana:latest
     container_name: studyfy-grafana
     ports:
-      - "3002:3000" # Diakses lewat port 3002 lokal
+      - "3002:3000"  # Port default untuk membuka dashboard Grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-    volumes:
-      - ./monitoring/grafana-data:/var/lib/grafana
-    networks:
-      - studyfy-mesh
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Password default untuk login nanti
     depends_on:
       - prometheus
-
-# ==================== PERSISTENT VOLUMES ====================
-volumes:
-  auth_db_data:
-    name: studyfy-auth-db-volume
-  item_db_data:
-    name: studyfy-item-db-volume
-  grafana-data:
-    name: studyfy-grafana-volume
-
-# ==================== ISOLATED NETWORK MESH ====================
-networks:
-  studyfy-mesh:
-    name: studyfy-microservices-network
-    driver: bridge
+    volumes:
+      - ./monitoring/grafana-data:/var/lib/grafana

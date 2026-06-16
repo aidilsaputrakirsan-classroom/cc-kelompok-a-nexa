@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Query, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -9,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 
 from database import engine, get_db
 from models import Base, User, UserRole
+from config import settings, setup_logging
 from schemas import (
     ItemCreate, ItemUpdate, ItemResponse, ItemListResponse,
     ItemStatsResponse,
@@ -27,7 +27,8 @@ from auth import (
 )
 import crud
 
-load_dotenv()
+# Configure logging based on log level in settings
+setup_logging()
 
 # Buat semua tabel saat startup
 Base.metadata.create_all(bind=engine)
@@ -36,12 +37,12 @@ app = FastAPI(
     title="Cloud App API",
     description="REST API untuk mata kuliah Komputasi Awan — SI ITK",
     version="0.4.0",
+    debug=settings.DEBUG,
 )
 
 # ==================== CORS (CONFIGURED FOR DEVOPS) ====================
-# Mengambil allowed origins dari .env, default ke localhost frontend (Vite)
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
-origins_list = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
+# Mengambil allowed origins dari configuration settings
+origins_list = settings.ALLOWED_ORIGINS
 allow_origin_regex = None
 
 # CORS dibuka untuk frontend lokal dan origin yang diizinkan via environment.

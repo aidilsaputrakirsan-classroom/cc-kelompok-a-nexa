@@ -1,4 +1,4 @@
-# ☁️ Cloud App - [STUDYFY]
+# ☁️ Studyfy — Learning Management System
 
 *Studyfy* adalah platform *Learning Management System (LMS)* berbasis cloud yang dirancang untuk menciptakan pengalaman belajar digital yang simpel, terorganisir, dan menyenangkan dengan mengintegrasikan peran admin, pengajar, dan murid dalam satu sistem terpadu yang efisien. Melalui platform ini, murid dapat mengakses materi pembelajaran berbasis multimedia serta memantau progres belajar secara mandiri, sementara pengajar dibekali dashboard khusus untuk mengelola modul materi, menyusun penugasan, hingga melakukan penilaian secara langsung.
 
@@ -17,41 +17,84 @@ Di sisi lain, admin berperan sebagai pengendali utama yang mengelola hak akses p
 
 | Teknologi | Fungsi |
 |-----------|--------|
-| FastAPI   | Backend REST API |
+| FastAPI   | Backend REST API (monolith & microservices) |
 | SQLAlchemy | ORM |
 | React     | Frontend SPA |
-| Nginx     | Reverse Proxy |
-| PostgreSQL | Database |
+| Nginx     | Reverse Proxy & API Gateway |
+| PostgreSQL | Database (monolith: 1 DB, microservices: 2 DB) |
 | Docker    | Containerization |
-| Docker Compose | Orchestration |
+| Docker Compose | Orchestration (3 mode: monolith, microservices, production) |
+| Prometheus | Metrics collection (microservices) |
+| Grafana   | Metrics dashboard (microservices) |
 | GitHub Actions | CI/CD |
-| Railway/Render | Cloud Deployment |
+| httpx     | Async HTTP client (inter-service communication) |
+| JWT (python-jose) | Token-based authentication |
+| passlib   | Password hashing (bcrypt) |
 
 ## 🏗️ Architecture
 
+Studyfy menggunakan **dual-mode architecture**:
+
+| Mode | File | Tujuan |
+|------|------|--------|
+| **Monolith** | `docker-compose.yml` | Development — satu backend FastAPI + satu PostgreSQL |
+| **Microservices** | `docker-compose.microservices.yml` | UAS/Production — service terpisah + gateway + monitoring |
+| **Production** | `docker-compose.prod.yml` | Production tanpa monitoring |
+
+### Monolith Mode
 ```
 [React Frontend (Nginx)] <--REST API (HTTP/JWT)--> [FastAPI Backend] <--SQLAlchemy ORM--> [PostgreSQL]
-                                                                                               |
-                                                                                         [Docker Volume]
+                                                                                                |
+                                                                                          [Docker Volume]
 ```
+
+### Microservices Mode
+```
+[Client] → [Nginx Gateway :8080] → [Auth Service :8001] → [auth-db]
+                                   → [Item Service :8002] → [item-db]
+                                   → [Frontend :3000]
+                                   → [Prometheus :9090] → [Grafana :3002]
+```
+
+> Dokumentasi arsitektur detail → [`docs/architecture.md`](docs/architecture.md)
 
 
 ## 🚀 Getting Started
 
-### Prasyarat
-- Python 3.10+
-- Node.js 18+
-- Git
+### Opsi 1: Docker (Rekomendasi)
 
-### Backend
+**Prasyarat:** Docker & Docker Compose
+
 ```bash
+# Monolith mode (development)
+docker compose up -d
+
+# Microservices mode (UAS/production)
+docker compose -f docker-compose.microservices.yml up -d --build
+
+# Production mode
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Atau gunakan Makefile:
+```bash
+make up      # Monolith + microservices + dev overrides
+make build   # Dengan rebuild
+make prod    # Production mode
+make dev     # Hot-reload mode
+```
+
+### Opsi 2: Manual (Tanpa Docker)
+
+**Prasyarat:** Python 3.10+, Node.js 18+, PostgreSQL, Git
+
+```bash
+# Backend
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
-```
 
-### Frontend
-```bash
+# Frontend (terminal terpisah)
 cd frontend
 npm install
 npm run dev
@@ -59,36 +102,96 @@ npm run dev
 
 ## 🐳 Docker
 
-### Prasyarat
-- Docker
-- Docker Compose
+### Mode Monolith (`docker-compose.yml`)
 
-### Menjalankan Semua Services
 ```bash
+# Start
 docker compose up -d
-```
 
-### Melihat Logs
-```bash
+# Logs
 docker compose logs -f
-```
 
-### Stop Services
-```bash
+# Stop
 docker compose down
-```
 
-### Status Services
-```bash
+# Status
 docker compose ps
 ```
 
-### Akses Aplikasi
+**Akses:**
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:8000 |
 | PostgreSQL | localhost:5433 |
+
+### Mode Microservices (`docker-compose.microservices.yml`)
+
+```bash
+# Start
+docker compose -f docker-compose.microservices.yml up -d --build
+
+# Logs
+docker compose -f docker-compose.microservices.yml logs -f
+
+# Stop
+docker compose -f docker-compose.microservices.yml down
+```
+
+**Akses:**
+| Service | URL |
+|---------|-----|
+| Frontend (via Gateway) | http://localhost:8080 |
+| Auth Service | http://localhost:8001 |
+| Item Service | http://localhost:8002 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3002 |
+
+### Makefile Commands
+
+| Command | Fungsi |
+|---------|--------|
+| `make up` | Start all services (monolith + microservices + dev) |
+| `make build` | Start with rebuild |
+| `make prod` | Production mode |
+| `make down` | Stop & remove containers |
+| `make logs` | View formatted logs |
+| `make logs-backend` | Logs auth-service + item-service |
+| `make ps` | Container status |
+| `make shell-auth` | Enter auth-service terminal |
+| `make shell-item` | Enter item-service terminal |
+| `make test` | Run pytest + vitest |
+| `make lint` | Run linter |
+| `make pr-check` | Lint + test + build |
+
+### Swagger UI (API Documentation)
+
+| Mode | Swagger URL |
+|------|-------------|
+| Monolith | `http://localhost:8000/docs` |
+| Auth Service (microservices) | `http://localhost:8001/docs` |
+| Item Service (microservices) | `http://localhost:8002/docs` |
+
+### Deployment
+
+Deployment ke **Railway** atau **Render** menggunakan container Docker:
+
+```bash
+# Build image
+docker build -t studyfy-backend ./backend
+
+# Push ke registry
+docker tag studyfy-backend registry.railway.app/studyfy-backend
+docker push registry.railway.app/studyfy-backend
+
+# Atau deploy via Railway CLI
+railway up
+```
+
+> Dokumentasi deployment detail → [`docs/deployment-guide.md`](docs/deployment-guide.md)
+
+---
+
 ## 🔐 Keamanan & Autentikasi
 > API ini dilindungi menggunakan standar **JWT (JSON Web Token)**. Untuk mengakses *endpoint* yang terproteksi (seperti mengelola data *Items*), pengguna harus melakukan autentikasi terlebih dahulu.
 
@@ -119,8 +222,8 @@ Authorization: Bearer <access_token>
 | 4 | Full-Stack Integration | ✅ |
 | 5-7 | Docker & Compose | ✅ |
 | 8 | UTS Demo | ✅ |
-| 9-11 | CI/CD Pipeline | 🔄 |
-| 12-14 | Microservices | ⬜ |
+| 9-11 | CI/CD Pipeline | ✅ |
+| 12-14 | Microservices | ✅ |
 | 15-16 | Final & UAS | ⬜ |
 
 ---
@@ -131,35 +234,44 @@ cc-kelompok-a-nexa/
 ├── .github/
 │   └── workflows/
 │       └── ci-testing.yml
-├── backend/
-│   ├── main.py              
-│   ├── auth.py              
-│   ├── database.py
-│   ├── models.py            
-│   ├── schemas.py           
-│   ├── crud.py              
-│   ├── requirements.txt     
-│   ├── .env                 
-│   └── .env.example         
-├── frontend/
+├── backend/                          # Monolith backend
+│   ├── main.py                       # FastAPI app (all endpoints)
+│   ├── auth.py                       # JWT auth logic
+│   ├── database.py, models.py, schemas.py, crud.py
+│   └── requirements.txt
+├── frontend/                         # React SPA
 │   ├── src/
-│   │   ├── App.jsx              
-│   │   ├── components/
-│   │   │   ├── Header.jsx       
-│   │   │   ├── LoginPage.jsx    
-│   │   │   ├── SearchBar.jsx
-│   │   │   ├── ItemForm.jsx
-│   │   │   ├── ItemList.jsx
-│   │   │   └── ItemCard.jsx
-│   │   └── services/
-│   │       └── api.js           
-│   ├── .env
-│   └── .env.example
-├── scripts/
-├── docs/
-├── docker-compose.yml
-├── Makefile
-├── .gitignore
+│   │   ├── App.jsx
+│   │   ├── components/               # Header, Login, Items, etc.
+│   │   └── services/api.js
+│   └── .env
+├── services/                         # Microservices
+│   ├── auth-service/                 # Auth microservice (port 8001)
+│   │   └── main.py                   # Register, login, verify token
+│   ├── item-service/                 # Item microservice (port 8002)
+│   │   ├── main.py                   # CRUD items + circuit breaker
+│   │   ├── auth_client.py            # HTTP client ke auth-service
+│   │   └── circuit_breaker.py        # Circuit breaker pattern
+│   ├── gateway/                      # Nginx API Gateway
+│   │   └── nginx.conf                # Routing rules
+│   └── shared/                       # Shared libraries
+│       ├── logging_config.py         # Structured JSON logging
+│       ├── logging_middleware.py     # Request logging + correlation ID
+│       └── metrics.py               # In-memory metrics collector
+├── docs/                             # Dokumentasi
+│   ├── architecture.md               # Arsitektur dual-mode + diagram
+│   ├── reliability-testing.md        # 9 skenario reliability test
+│   ├── operations-guide.md           # Panduan operasional
+│   ├── git-workflow.md               # Git workflow & PR guidelines
+│   ├── setup-guide.md                # Setup guide
+│   ├── testing-guide.md              # Testing guide
+│   ├── api-test-results.md           # API test results
+│   └── ui-test-results.md            # UI test results
+├── docker-compose.yml                # Monolith mode
+├── docker-compose.microservices.yml  # Microservices mode
+├── docker-compose.prod.yml           # Production mode
+├── docker-compose.dev.yml            # Dev overrides (hot-reload)
+├── Makefile                          # Automation commands
 └── README.md
 ```
 ## 📡 Dokumentasi API
@@ -185,7 +297,9 @@ Authorization: Bearer <access_token>
 ```json
 {
   "status": "healthy",
-  "version": "0.4.0"
+  "service": "backend",
+  "version": "1.0.0",
+  "database": "connected"
 }
 ```
 
@@ -769,9 +883,9 @@ Authorization: Bearer <access_token>
 ```json
 {
   "total_items": 5,
-  "total_quantity": 50,
   "total_value": 75000000,
-  "average_price": 15000000
+  "termahal": 25000000,
+  "termurah": 5000000
 }
 ```
 
@@ -846,8 +960,17 @@ Authorization: Bearer <access_token>
   ]
 }
 ```
-## Hasil Uji Coba Endpoint
+## 📚 Dokumentasi
 
-<img src="hasil_pengecekan/Screenshot 2026-02-28 192032.png">
-<img src="hasil_pengecekan/Screenshot 2026-02-28 192041.png">
-<img src="hasil_pengecekan/Screenshot 2026-02-28 192024.png">
+| Dokumen | Deskripsi |
+|---------|-----------|
+| [`docs/architecture.md`](docs/architecture.md) | Arsitektur dual-mode (monolith + microservices), diagram, API contract |
+| [`docs/reliability-testing.md`](docs/reliability-testing.md) | 9 skenario reliability testing dengan hasil |
+| [`docs/operations-guide.md`](docs/operations-guide.md) | Panduan operasional: health check, logging, tracing, metrics, troubleshooting |
+| [`docs/deployment-guide.md`](docs/deployment-guide.md) | Panduan deployment ke Railway / Render |
+| [`docs/release-notes.md`](docs/release-notes.md) | Release notes v1.0.0 s.d. v3.0.0 |
+| [`docs/git-workflow.md`](docs/git-workflow.md) | Git workflow, branch naming, commit convention, code review |
+| [`docs/setup-guide.md`](docs/setup-guide.md) | Panduan instalasi lokal |
+| [`docs/testing-guide.md`](docs/testing-guide.md) | Panduan testing |
+| [`docs/api-test-results.md`](docs/api-test-results.md) | Hasil uji coba API |
+| [`docs/ui-test-results.md`](docs/ui-test-results.md) | Hasil uji coba UI |

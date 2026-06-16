@@ -3,7 +3,17 @@
 # ---------------------------------------------------------
 # VARIABEL: Kunci utama agar Docker membaca semua file
 # ---------------------------------------------------------
-COMPOSE_CMD=docker compose -f docker-compose.yml -f docker-compose.microservices.yml -f docker-compose.dev.yml
+COMPOSE_CMD=docker compose -f docker-compose.microservices.yml
+
+help:
+	@echo "SafeSpace Microservices Commands:"
+	@echo "  up           : Jalankan semua service (detached)"
+	@echo "  build        : Build ulang dan jalankan"
+	@echo "  down         : Stop semua container"
+	@echo "  ps           : Cek status container"
+	@echo "  logs         : Lihat logs semua service"
+	@echo "  shell-auth   : Masuk terminal Auth Service"
+	@echo "  shell-item   : Masuk terminal Item Service"
 
 # Start semua services di background
 up:
@@ -74,7 +84,8 @@ lint:
 # Jalankan unit test
 test:
 	@echo "Menjalankan unit tests Backend (Pytest)..."
-	cd backend && pytest
+	cd services/auth-service && pytest
+	cd services/item-service && pytest
 	@echo "Menjalankan unit tests Frontend (Vitest)..."
 	cd frontend && npm test
 

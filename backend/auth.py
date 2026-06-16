@@ -1,9 +1,7 @@
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import secrets
 
-from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
@@ -12,14 +10,13 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import User, UserRole
+from config import settings
 
-load_dotenv()
-
-# Konfigurasi dari environment variables
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-for-development")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
-PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "30"))
+# Konfigurasi dari environment variables / config settings
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
