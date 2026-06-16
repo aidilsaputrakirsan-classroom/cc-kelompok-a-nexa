@@ -1,0 +1,29 @@
+# Reflection Paper – Ika Agustin Wulandari
+
+## Pendahuluan
+
+Platform yang kami kembangkan ialah **Studyfy** yang dimana merupakan sebuah sistem **LMS (Learning Management System)** berbasis *cloud* yang dirancang untuk mengelola materi pembelajaran secara terstruktur serta mempermudah manajemen akses pengguna, khususnya pembuatan akun Guru oleh Admin. Dalam arsitektur sistem terdistribusi, ketersediaan layanan (*high availability*) dan keamanan data pengguna menjadi prioritas utama agar proses belajar-mengajar digital tidak terganggu oleh adanya kegagalan sistem terpusat.
+
+Dalam pengembangan proyek Studyfy ini, saya memegang peran sebagai **Lead DevOps**. Tanggung jawab saya mencakup lebih dari sekadar memastikan kontainer aplikasi "bisa menyala". Saya bertanggung jawab penuh atas perancangan, otomatisasi, dan pemeliharaan infrastruktur sistem—memastikan bagaimana setiap komponen, mulai dari *Frontend*, *Nginx API Gateway*, hingga *microservices* (seperti *Auth Service* untuk manajemen pembuatan akun Guru dan *Item/Material Service* untuk pengelolaan materi) beserta databasenya masing-masing, dapat saling terhubung dan berkomunikasi dengan aman, efisien, memiliki toleransi kesalahan yang tinggi (*fault tolerance*), serta konsisten di berbagai *environment*.
+
+## Kontribusi dalam Proyek
+
+Sebagai Lead DevOps, kontribusi saya berfokus pada pembangunan fondasi arsitektur kokoh yang menjembatani pengembangan kode dari tim *Backend/Frontend* dengan operasional server. Langkah awal yang saya lakukan adalah menerapkan *branch protection rules* pada repositori GitHub demi menjaga stabilitas *source code* utama. Selanjutnya, saya memimpin transisi arsitektur aplikasi dari struktur monolitik menjadi *microservices* dengan memecah layanan menjadi entitas mandiri yang menangani fungsi bisnis spesifik.
+
+Untuk menjamin konsistensi *environment* bagi tim *developer*, saya mengimplementasikan *containerization* menggunakan **Docker** dan **Docker Compose** yang mengelola seluruh kontainer terdistribusi (termasuk kontainer *database* PostgreSQL terpisah, *core services*, *frontend*, dan *gateway*). Di sisi keandalan (*reliability*), saya mengonfigurasi **Nginx sebagai API Gateway** untuk mengatur *routing* lalu lintas data ke endpoint `POST /api/materials` (Tambah Materi) dan endpoint pembuatan akun Guru. Saya juga menyempurnakan mekanisme **Docker Healthcheck** berbasis status *Circuit Breaker* (CLOSED, OPEN, HALF-OPEN), menyusun *Makefile* untuk otomatisasi manajemen kontainer guna membantu tugas QA, serta merancang *data migration script* menggunakan SQLAlchemy untuk memindahkan data pengguna dan materi dari database monolit lama ke arsitektur *database per service* secara aman.
+
+## Tantangan yang Dihadapi
+
+Selama proses pengembangan, terdapat beberapa tantangan teknis yang cukup kompleks dan menguras energi. Salah satu tantangan terbesar terjadi saat proses migrasi data dari arsitektur monolith ke *microservices*. Di tengah kondisi *burnout*, saya sempat mengalami kebingungan dalam memetakan relasi data pengguna dan materi lama ke dua *database* terpisah (`auth_db` dan `material_db`). Sinkronisasi sempat kacau karena belum matangnya komunikasi *environment* antarlayanan, di mana *gateway* gagal mengenali titik akhir API akibat konfigurasi variabel lingkungan URL (*environment variables* seperti `DATABASE_URL`, `VITE_AUTH_URL`, dan `VITE_API_URL`) di dalam kontainer yang belum selaras.
+
+Tantangan klasik namun krusial yang sering muncul adalah masalah **CORS (Cross-Origin Resource Sharing)**. Log error merah di konsol browser sempat berulang kali memblokir permintaan dari form/modal *frontend* saat mencoba melakukan *fetch/axios* ke API *backend*. Saya menyadari bahwa dalam arsitektur microservices, mengizinkan akses antar-domain membutuhkan ketelitian tinggi dalam menyusun *header* pada level API Gateway. Kegagalan *routing* pada Nginx juga sempat memicu *looping error* 404 dan 502, di mana kesalahan kecil seperti kurangnya satu karakter garis miring (`/`) pada pengaturan `proxy_pass` dapat memutus seluruh jalur komunikasi antar-kontainer.
+
+Dari sisi keterbatasan perangkat, proses *build* berkali-kali untuk *image* Docker dan manajemen kontainer yang masif di awal produksi sempat membuat ruang penyimpanan *Disk C* penuh dan membebani RAM laptop. Hal ini memaksa saya untuk disiplin melakukan *resource pruning* secara berkala guna membersihkan *build cache* dan kontainer lama yang sudah tidak terpakai.
+
+## Pembelajaran yang Didapat
+
+Melalui proyek Studyfy ini, saya memperoleh pemahaman mendalam mengenai manajemen jaringan internal Docker (*inter-service communication*), fungsi vital reverse proxy, hingga implementasi pola *reliability* seperti *Retry Logic* dan *Circuit Breaker* untuk mencegah *cascading failure* ketika salah satu service mengalami kelebihan beban. Saya menyadari bahwa jargon *"works on my machine"* tidak lagi berlaku; infrastruktur harus dirancang agar siap berjalan secara konsisten di lingkungan mana pun melalui pembungkusan variabel lingkungan yang tepat.
+
+Dalam hal *troubleshooting*, saya belajar bahwa mendiagnosis error pada sistem terdistribusi tidak bisa dilakukan dengan menebak-nebak, melainkan dengan melacak alur log data dari *Gateway*, memeriksa *health status* kontainer, hingga menganalisis kode respons HTTP (seperti membedakan error *transient* yang layak di-*retry* dengan error deterministik).
+
+Secara non-teknis, peran ini membentuk mentalitas tanggung jawab yang besar. Sebagai penyedia fondasi sistem, ketika infrastruktur atau konfigurasi database PostgreSQL yang saya bangun mengalami gangguan, pekerjaan anggota tim lain seperti *backend*, *frontend*, hingga proses *testing* oleh *QA* akan langsung terhenti. Tantangan ini melatih saya untuk tetap tenang di bawah tekanan, berpikir taktis, dan mengambil keputusan arsitektur yang efisien demi menjaga stabilitas proyek tim.
