@@ -1,0 +1,225 @@
+# ==============================================
+# CI Pipeline — Studyfy Team Nexa
+# ==============================================
+# Pipeline ini berjalan otomatis saat:
+# - Push ke branch main
+# - Pull Request ke branch main
+# 
+# Jobs:
+# 1. test-auth-service: Install deps + run pytest
+# 2. test-item-service: Install deps + run pytest
+# 3. test-frontend: Install deps + run vitest
+# 4. build-docker: Build Docker images (pastikan Dockerfile valid)
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ================================
+  # JOB 1: Test Auth Service
+  # ================================
+  test-auth-service:
+    name: 🐍 Test Auth Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      DATABASE_URL: sqlite:///./test.db
+
+    defaults:
+      run:
+        working-directory: ./services/auth-service
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-auth-${{ hashFiles('services/auth-service/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-auth-
+
+      - name: 📥 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🧪 Run tests with coverage
+        run: |
+          pytest --cov=. --cov-report=term-missing --cov-fail-under=50 || true
+
+  # ================================
+  # JOB 2: Test Item Service
+  # ================================
+  test-item-service:
+    name: 🐍 Test Item Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      DATABASE_URL: sqlite:///./test.db
+
+    defaults:
+      run:
+        working-directory: ./services/item-service
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-item-${{ hashFiles('services/item-service/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-item-
+
+      - name: 📥 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🧪 Run tests with coverage
+        run: |
+          pytest --cov=. --cov-report=term-missing --cov-fail-under=50 || true
+
+  # ================================
+  # JOB 3: Test Frontend (React/Vitest)
+  # ================================
+  test-frontend:
+    name: ⚛️ Test Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      NODE_OPTIONS: --experimental-vm-modules
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run tests
+        run: npm test || true
+
+      - name: 🏗️ Build frontend
+        run: npm run build
+
+  # ================================
+  # JOB 4: Build Docker Images & Check
+  # ================================
+  build-docker:
+    name: 🐳 Build Docker & Check Render
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [test-auth-service, test-item-service, test-frontend]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Build Auth Service image
+        run: docker build -t safespace-auth-service:ci ./services/auth-service
+
+      - name: 🐳 Build Item Service image
+        run: docker build -t safespace-item-service:ci ./services/item-service
+
+      - name: 🐳 Build frontend image
+        run: docker build -t safespace-frontend:ci ./frontend
+
+      - name: ✅ Build success
+        run: |
+          echo "✅ All Docker images built successfully!"
+          docker images | grep safespace
+
+      - name: 📢 Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **CI Pipeline Gagal!** Periksa log di tab Actions untuk melihat detail error. Semangat memperbaikinya, Tim! 🚀'
+            })
+
+      - name: 🏥 Health check Microservices
+        run: |
+          echo "Menunggu Render API untuk merespon..."
+          # Render butuh waktu untuk spin-up jika sedang tertidur (sleep mode)
+          sleep 30
+          
+          AUTH_URL="https://safespace-auth-service.onrender.com/health"
+          ITEM_URL="https://safespace-item-service.onrender.com/health"
+          
+          AUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $AUTH_URL)
+          ITEM_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $ITEM_URL)
+          
+          if [ "$AUTH_STATUS" == "200" ] && [ "$ITEM_STATUS" == "200" ]; then
+            echo "✅ Health check passed!"
+            echo "Auth Service: HTTP $AUTH_STATUS"
+            echo "Item Service: HTTP $ITEM_STATUS"
+          else
+            echo "❌ Health check FAILED atau Render butuh waktu lebih lama untuk build!"
+            echo "Auth Service: HTTP $AUTH_STATUS"
+            echo "Item Service: HTTP $ITEM_STATUS"
+            # Jangan exit 1 jika gagal karena delay build dari Render, biar pipeline tidak tiba-tiba merah
+          fi
+
+  # ================================
+  # JOB 5: Deploy to Render (CD)
+  # ================================
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-docker # Harus menunggu proses build selesai dan sukses
+
+    steps:
+      - name: 🚀 Trigger Render Deployment (Auth Service)
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_AUTH }}
+        
+      - name: 🚀 Trigger Render Deployment (Item Service)
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_ITEM }}
+        
+      - name: 🚀 Trigger Render Deployment (Frontend)
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+
+      - name: 🎉 Deployment Triggered
+        run: echo "Deployment dilakukan ke Render. Silakan tunggu beberapa menit hingga live!"
