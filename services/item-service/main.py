@@ -40,7 +40,7 @@ app = FastAPI(
 )
 
 # CORS
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://studyfy.onrender.com").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://studyfy-item-service.onrender.com").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
