@@ -1,7 +1,8 @@
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001';
 const ITEM_API_URL = import.meta.env.VITE_ITEM_API_URL || 'http://localhost:8002';
-const CLASS_API_URL = import.meta.env.VITE_CLASS_API_URL || 'http://localhost:8003';
-const ASSIGNMENT_API_URL = import.meta.env.VITE_ASSIGNMENT_API_URL || 'http://localhost:8004';
+// Classes and assignments are now consolidated into item-service (port 8002)
+const CLASS_API_URL = import.meta.env.VITE_CLASS_API_URL || 'http://localhost:8002';
+const ASSIGNMENT_API_URL = import.meta.env.VITE_ASSIGNMENT_API_URL || 'http://localhost:8002';
 
 
 // Centralized fetch wrapper to handle service unavailability
