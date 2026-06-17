@@ -1,7 +1,13 @@
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001';
-const ITEM_API_URL = import.meta.env.VITE_ITEM_API_URL || 'http://localhost:8002';
-const CLASS_API_URL = import.meta.env.VITE_CLASS_API_URL || 'http://localhost:8003';
-const ASSIGNMENT_API_URL = import.meta.env.VITE_ASSIGNMENT_API_URL || 'http://localhost:8004';
+// Semua service diakses melalui 1 gateway (Nginx)
+// Di production: https://studyfy.onrender.com
+// Di development: http://localhost:8000 (gateway lokal)
+const GATEWAY_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || GATEWAY_URL;
+const ITEM_API_URL = import.meta.env.VITE_ITEM_API_URL || GATEWAY_URL;
+const CLASS_API_URL = import.meta.env.VITE_CLASS_API_URL || GATEWAY_URL;
+const ASSIGNMENT_API_URL = import.meta.env.VITE_ASSIGNMENT_API_URL || GATEWAY_URL;
+const API_URL = GATEWAY_URL;
 
 
 // Centralized fetch wrapper to handle service unavailability
@@ -71,7 +77,7 @@ export async function register(userData) {
 }
 
 export async function login(data) {
-  const response = await fetch(`${AUTH_API_URL}/login`, {
+  const response = await fetch(`${AUTH_API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
