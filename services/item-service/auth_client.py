@@ -124,3 +124,25 @@ async def verify_token_with_auth_service(
 
     correlation_id = getattr(request.state, "correlation_id", None)
     return await _call_auth_service(authorization, correlation_id)
+
+
+async def resolve_users_from_auth_service(user_ids: list[int], authorization: str) -> list[dict]:
+    """Batch-resolve user details from auth-service for a list of user IDs."""
+    if not user_ids:
+        return []
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{AUTH_SERVICE_URL}/users/batch",
+                json={"user_ids": user_ids},
+                headers={"Authorization": authorization},
+                timeout=TIMEOUT_SECONDS,
+            )
+        if response.status_code == 200:
+            return response.json()
+        # Fallback: return stubs if auth-service doesn't support batch lookup
+        logger.warning(f"Batch user resolve returned {response.status_code}, using stubs")
+        return [{"user_id": uid, "username": f"user_{uid}"} for uid in user_ids]
+    except Exception as exc:
+        logger.warning(f"resolve_users_from_auth_service failed: {exc}")
+        return [{"user_id": uid, "username": f"user_{uid}"} for uid in user_ids]
