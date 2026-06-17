@@ -91,7 +91,7 @@ metrics = ServiceMetrics("auth-service")
 
 app.add_middleware(RequestLoggingMiddleware)
 
-cors_origins = os.getenv("CORS_ORIGINS", "https://studyfy.onrender.com")
+cors_origins = os.getenv("CORS_ORIGINS", "https://studyfy-auth-service.onrender.com")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in cors_origins.split(",") if origin.strip()],
