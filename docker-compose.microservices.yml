@@ -10,7 +10,6 @@ services:
     container_name: studyfy-auth-service
     restart: unless-stopped
     environment:
-      # Mengambil dari .env root
       DATABASE_URL: ${AUTH_DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
@@ -35,7 +34,6 @@ services:
     container_name: studyfy-item-service
     restart: unless-stopped
     environment:
-      # Mengambil dari .env root
       DATABASE_URL: ${ITEM_DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
       AUTH_SERVICE_URL: http://auth-service:8001
@@ -47,6 +45,63 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  class-service:
+    build:
+      context: ./services/class-service
+      dockerfile: Dockerfile
+    container_name: studyfy-class-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${CLASS_DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "8003:8003"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  assignment-service:
+    build:
+      context: ./services/assignment-service
+      dockerfile: Dockerfile
+    container_name: studyfy-assignment-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${ASSIGNMENT_DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CLASS_SERVICE_URL: http://class-service:8003
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "8004:8004"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      class-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
       interval: 20s
       timeout: 10s
       retries: 3
@@ -69,6 +124,10 @@ services:
         condition: service_healthy
       item-service:
         condition: service_healthy
+      class-service:
+        condition: service_healthy
+      assignment-service:
+        condition: service_healthy
 
   frontend:
     build:
@@ -77,6 +136,8 @@ services:
       args:
         VITE_AUTH_API_URL: http://localhost:8001
         VITE_ITEM_API_URL: http://localhost:8002
+        VITE_CLASS_API_URL: http://localhost:8003
+        VITE_ASSIGNMENT_API_URL: http://localhost:8004
     container_name: studyfy-frontend
     restart: unless-stopped
     depends_on:
@@ -93,14 +154,16 @@ services:
     depends_on:
       - auth-service
       - item-service
+      - class-service
+      - assignment-service
 
   grafana:
     image: grafana/grafana:latest
     container_name: studyfy-grafana
     ports:
-      - "3002:3000"  # Port default untuk membuka dashboard Grafana
+      - "3002:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin # Password default untuk login nanti
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
     volumes:
