@@ -1,4 +1,3 @@
-"""Database connection for Auth Service."""
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -6,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/auth_db"
+    DATABASE_URL = "postgresql://postgres:postgres@localhost:5436/assignment_db"
 
 
 engine = create_engine(DATABASE_URL)
