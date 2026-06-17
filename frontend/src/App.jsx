@@ -14,6 +14,9 @@ import {
 } from "./services/api"
 import StatusPage from "./pages/StatusPage"
 
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001'
+const ITEM_API_URL = import.meta.env.VITE_ITEM_API_URL || 'http://localhost:8002'
+
 function App() {
   if (window.location.pathname === '/status') {
     return <StatusPage />;

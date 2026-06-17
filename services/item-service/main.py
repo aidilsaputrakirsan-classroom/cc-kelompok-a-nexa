@@ -32,7 +32,7 @@ app = FastAPI(
 )
 
 # CORS
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://studyfy.onrender.com").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -183,3 +183,16 @@ async def delete_item(
         raise HTTPException(status_code=404, detail="Item not found")
     db.delete(item)
     db.commit()
+
+
+@app.get("/team")
+def team_info():
+    return {
+        "team": "cloud-kelompok-a-nexa",
+        "members": [
+            {"name": "Dzaky Rasyiq Zuhair", "nim": "10231035", "role": "Lead Backend"},
+            {"name": "Dhiya Afifah", "nim": "10231031", "role": "Lead Frontend"},
+            {"name": "Ika Agustin Wulandari", "nim": "10231041", "role": "Lead DevOps"},
+            {"name": "Gabriel Karmen Sanggalangi", "nim": "10231039", "role": "Lead QA & Docs"},
+        ],
+    }
