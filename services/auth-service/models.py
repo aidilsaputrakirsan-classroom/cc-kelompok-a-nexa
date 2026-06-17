@@ -1,16 +1,20 @@
-"""User model for Auth Service."""
+import os
 import enum
 
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text
 from sqlalchemy.sql import func
 from database import Base
 
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+
 class UserRole(str, enum.Enum):
     USER = "USER"
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = {'schema': 'auth_service'}
+    if not IS_SQLITE:
+        __table_args__ = {'schema': 'auth_service'}
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
